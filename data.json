@@ -1,0 +1,176 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Wireless Mouse",
+      "price": 25.99,
+      "stock": 50,
+      "created_at": "2024-06-15T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Mechanical Keyboard",
+      "price": 79.99,
+      "stock": 30,
+      "created_at": "2024-06-16T11:30:00Z"
+    },
+    {
+      "id": 3,
+      "name": "HD Monitor",
+      "price": 199.99,
+      "stock": 20,
+      "created_at": "2024-06-17T09:15:00Z"
+    },
+    {
+      "id": 4,
+      "name": "USB-C Hub",
+      "price": 49.99,
+      "stock": 40,
+      "created_at": "2024-06-18T14:45:00Z"
+    },
+    {
+      "id": 5,
+      "name": "External SSD",
+      "price": 129.99,
+      "stock": 25,
+      "created_at": "2024-06-19T08:20:00Z"
+    },
+    {
+      "id": 6,
+      "name": "Gaming Headset",
+      "price": 89.99,
+      "stock": 35,
+      "created_at": "2024-06-20T12:10:00Z"
+    },
+    {
+      "id": 7,
+      "name": "Wireless Mouse",
+      "price": 25.99,
+      "stock": 50,
+      "created_at": "2024-06-15T10:00:00Z"
+    },
+    {
+      "id": 8,
+      "name": "Mechanical Keyboard",
+      "price": 79.99,
+      "stock": 30,
+      "created_at": "2024-06-16T11:30:00Z"
+    },
+    {
+      "id": 9,
+      "name": "HD Monitor",
+      "price": 199.99,
+      "stock": 20,
+      "created_at": "2024-06-17T09:15:00Z"
+    },
+    {
+      "id": 10,
+      "name": "USB-C Hub",
+      "price": 49.99,
+      "stock": 40,
+      "created_at": "2024-06-18T14:45:00Z"
+    }
+  ],
+  "vouchers": [
+    {
+      "username": "zarni",
+      "phoneNumber": "09250925549",
+      "voucherId": "V-0ZMCM",
+      "date": "2026-02-18",
+      "items": [
+        {
+          "id": 1771414496045,
+          "product": {
+            "id": 1,
+            "name": "Wireless Mouse",
+            "price": 25.99,
+            "stock": 50,
+            "created_at": "2024-06-15T10:00:00Z"
+          },
+          "quantity": 4,
+          "cost": 103.96,
+          "created_at": "2026-02-18T11:34:56.045Z"
+        }
+      ],
+      "subTotal": 103.96,
+      "tax": 8.3168,
+      "grandTotal": 112.2768,
+      "id": 1
+    },
+    {
+      "username": "phyo",
+      "phoneNumber": "09111222333",
+      "voucherId": "V-A8K2L",
+      "date": "2026-02-18",
+      "items": [
+        {
+          "id": 1771414497001,
+          "product": {
+            "id": 2,
+            "name": "Mechanical Keyboard",
+            "price": 79.99,
+            "stock": 30,
+            "created_at": "2024-06-16T11:30:00Z"
+          },
+          "quantity": 1,
+          "cost": 79.99,
+          "created_at": "2026-02-18T12:10:00.000Z"
+        }
+      ],
+      "subTotal": 79.99,
+      "tax": 6.3992,
+      "grandTotal": 86.3892,
+      "id": 2
+    },
+    {
+      "username": "aung",
+      "phoneNumber": "09444555666",
+      "voucherId": "V-X9T7P",
+      "date": "2026-02-18",
+      "items": [
+        {
+          "id": 1771414498002,
+          "product": {
+            "id": 3,
+            "name": "HD Monitor",
+            "price": 199.99,
+            "stock": 20,
+            "created_at": "2024-06-17T09:15:00Z"
+          },
+          "quantity": 2,
+          "cost": 399.98,
+          "created_at": "2026-02-18T12:30:00.000Z"
+        }
+      ],
+      "subTotal": 399.98,
+      "tax": 31.9984,
+      "grandTotal": 431.9784,
+      "id": 3
+    },
+    {
+      "username": "su",
+      "phoneNumber": "09999888777",
+      "voucherId": "V-Q5W8E",
+      "date": "2026-02-18",
+      "items": [
+        {
+          "id": 1771414499003,
+          "product": {
+            "id": 4,
+            "name": "USB-C Hub",
+            "price": 49.99,
+            "stock": 40,
+            "created_at": "2024-06-18T14:45:00Z"
+          },
+          "quantity": 3,
+          "cost": 149.97,
+          "created_at": "2026-02-18T13:00:00.000Z"
+        }
+      ],
+      "subTotal": 149.97,
+      "tax": 11.9976,
+      "grandTotal": 161.9676,
+      "id": 4
+    }
+  ]
+}

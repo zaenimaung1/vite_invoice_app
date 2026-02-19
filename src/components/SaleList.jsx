@@ -4,33 +4,40 @@ import Container from "./Container";
 import useSWR from "swr";
 import useRecordStore from "../store/useRecordStroe";
 import VoucherList from "./SaleTable";
-import VoucherTableRow from "./VoucherTableRow";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
+
 const SaleList = () => {
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    getValues,
   } = useForm();
-  const { data, error, isLoading } = useSWR(
+
+  const { data, isLoading } = useSWR(
     import.meta.env.VITE_API_URL + "/products",
     fetcher
   );
 
-  const { addRecord, records, changeQuantity ,resetRecords } = useRecordStore();
+  const { addRecord, records, changeQuantity, resetRecords } =
+    useRecordStore();
+
+  const [voucherId] = useState(
+    () => "V-" + Math.random().toString(36).substring(2, 7).toUpperCase()
+  );
 
   const onSubmit = (data) => {
     const currentProduct = JSON.parse(data.product);
-    const currentProductId = records.find(
+
+    const existing = records.find(
       (rec) => rec.product.id === currentProduct.id
     );
-    if (currentProductId) {
-      const newQty = currentProductId.quantity + Number(data.quantity);
-      changeQuantity(currentProductId.id, newQty);
-      reset();
-      return;
+
+    if (existing) {
+      const newQty = existing.quantity + Number(data.quantity);
+      changeQuantity(existing.id, newQty);
     } else {
       addRecord({
         id: Date.now(),
@@ -39,218 +46,204 @@ const SaleList = () => {
         cost: Number(currentProduct.price) * Number(data.quantity),
         created_at: new Date().toISOString(),
       });
+    }
+
+    reset({ product: "", quantity: "", date: data.date });
+  };
+
+  const confirmVoucher = async () => {
+    const values = getValues();
+
+    const phoneRegex = /^09\d{5,9}$/;
+
+    if (!values.username || !values.phoneNumber) {
+      alert("Please enter username and phone number.");
+      return;
+    }
+
+    if (!phoneRegex.test(values.phoneNumber)) {
+      alert("Phone number must start with 09 and be between 7 and 11 digits.");
+      return;
+    }
+
+    if (records.length === 0) {
+      alert("You must add at least one product.");
+      return;
+    }
+
+    const subTotal = records.reduce((sum, rec) => sum + rec.cost, 0);
+    const tax = subTotal * 0.08;
+    const grandTotal = subTotal + tax;
+
+    const voucherJSON = {
+      username: values.username,
+      phoneNumber: values.phoneNumber,
+      voucherId,
+      date: new Date().toISOString(),
+      items: records,
+      subTotal,
+      tax,
+      grandTotal,
+    };
+
+    try {
+      const res = await fetch(
+        import.meta.env.VITE_API_URL + "/vouchers",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(voucherJSON),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to save voucher");
+
+      alert("Voucher Confirmed!");
+
+      resetRecords();
       reset();
+    } catch (error) {
+      console.error("Error saving voucher:", error);
+      alert("Error saving voucher");
     }
   };
-  const [voucherId] = useState(
-    () => "V-" + Math.random().toString(36).substring(2, 7).toUpperCase()
-  );
-  const [username, setUsername] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-
- const confirmVoucher = async () => {
-  if (!username || !phoneNumber) {
-    alert("Please enter username and phone number.");
-    return;
-  }
-
-  if (records.length === 0) {
-    alert("You must add at least one product.");
-    return;
-  }
-
-  const subTotal = records.reduce((sum, rec) => sum + rec.cost, 0);
-  const tax = subTotal * 0.08;
-  const grandTotal = subTotal + tax;
-
-  const voucherJSON = {
-    username,
-    phoneNumber,
-    voucherId,
-    date: new Date().toISOString().slice(0, 10),
-    items: records,
-    subTotal,
-    tax,
-    grandTotal,
-  };
-
-  try {
-    const res = await fetch(import.meta.env.VITE_API_URL + "/vouchers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(voucherJSON),
-    });
-
-    if (!res.ok) throw new Error("Failed to save voucher");
-
-    alert("Voucher Confirmed!");
-
-    // Clear records
-    resetRecords();
-
-    setUsername("");
-    setPhoneNumber("");
-
-  } catch (error) {
-    console.error("Error saving voucher:", error);
-    alert("Error saving voucher");
-  }
-};
-
-
 
   return (
     <Container>
       <section className="w-full">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">Add Sale</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Quickly add a new sale — works responsively across screen sizes.
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-gray-500">
-                Recent sales:{" "}
-                <span className="font-semibold text-gray-800">
-                  {records.length}
-                </span>
-              </div>
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Add Sale
+          </h3>
 
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-end"
           >
+            {/* Voucher ID */}
             <div>
               <label className="block text-sm font-medium mb-1">
                 Voucher ID
               </label>
               <input
-                defaultValue={voucherId}
+                value={voucherId}
                 readOnly
-                {...register("vocherId", { required: true, minLength: 2 })}
-                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 ${
-                  errors.vocherId
-                    ? "border-red-300 focus:ring-red-300"
-                    : "border-gray-200 focus:ring-indigo-300"
-                }`}
-                placeholder="e.g. V-001"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200"
               />
-              {errors.vocherId && (
-                <p className="text-xs text-red-500 mt-1">
-                  Voucher ID is required
+            </div>
+
+            {/* Customer Name */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Customer Name
+              </label>
+              <input
+                type="text"
+                {...register("username", {
+                  required: "Customer name is required",
+                })}
+                className="border p-2 rounded w-full"
+              />
+              {errors.username && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.username.message}
                 </p>
               )}
             </div>
 
+            {/* Phone Number */}
             <div>
               <label className="block text-sm font-medium mb-1">
-                Customer name
+                Phone Number
               </label>
               <input
                 type="text"
-                placeholder="Customer Name"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                maxLength={11}
+                {...register("phoneNumber", {
+                  required: "Phone number is required",
+                  pattern: {
+                    value: /^09\d{5,9}$/,
+                    message:
+                      "Phone must start with 09 and be 7-11 digits",
+                  },
+                })}
                 className="border p-2 rounded w-full"
               />
+              {errors.phoneNumber && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.phoneNumber.message}
+                </p>
+              )}
             </div>
+
+            {/* Product */}
             <div>
               <label className="block text-sm font-medium mb-1">
-                 Phone Number
+                Product
               </label>
-              <input
-                type="number"
-                placeholder="Customer Phone Number"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="border p-2 rounded w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Product</label>
               <select
                 {...register("product", { required: true })}
-                name="product"
-                id="product"
-                className="w-full px-3 py-2 rounded-lg text-gray-500 border focus:outline-none focus:ring-2 border-gray-200 focus:ring-indigo-300"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200"
               >
                 <option value="">Select product</option>
                 {!isLoading &&
-                  data.map((product) => (
-                    <option key={product.id} value={JSON.stringify(product)}>
+                  data?.map((product) => (
+                    <option
+                      key={product.id}
+                      value={JSON.stringify(product)}
+                    >
                       {product.name}
                     </option>
                   ))}
               </select>
             </div>
+
+            {/* Quantity */}
             <div>
-              <label className="block text-sm font-medium mb-1">Quantity</label>
+              <label className="block text-sm font-medium mb-1">
+                Quantity
+              </label>
               <input
                 type="number"
-                {...register("quantity", { required: true })}
-                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 ${
-                  errors.quantity
-                    ? "border-red-300 focus:ring-red-300"
-                    : "border-gray-200 focus:ring-indigo-300"
-                }`}
-                placeholder="Add quantity"
+                {...register("quantity", {
+                  required: true,
+                  min: 1,
+                })}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200"
               />
-              {errors.quantity && (
-                <p className="text-xs text-red-500 mt-1">
-                  Quantity is required
-                </p>
-              )}
             </div>
 
+            {/* Date */}
             <div>
-              <label className="block text-sm font-medium mb-1">Date</label>
+              <label className="block text-sm font-medium mb-1">
+                Date
+              </label>
               <input
+                type="date"
                 defaultValue={new Date().toISOString().slice(0, 10)}
                 {...register("date", { required: true })}
-                type="date"
-                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 ${
-                  errors.date
-                    ? "border-red-300 focus:ring-red-300"
-                    : "border-gray-200 focus:ring-indigo-300"
-                }`}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200"
               />
-              {errors.date && (
-                <p className="text-xs text-red-500 mt-1">Date is required</p>
-              )}
             </div>
 
-            <div className="lg:col-span-3 flex items-center justify-end gap-3">
-              <button
-                type="reset"
-                onClick={() => reset()}
-                className="px-4 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Reset
-              </button>
+            {/* Buttons */}
+            <div className="lg:col-span-3 flex justify-end gap-3">
               <button
                 type="submit"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
               >
                 Add Sale
               </button>
-            </div>
 
-            <div className="lg:col-span-3 flex justify-end">
               <button
                 type="button"
                 onClick={confirmVoucher}
                 disabled={records.length === 0}
-                className={`px-4 py-2 rounded-lg text-white 
-      ${
-        records.length === 0
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-green-600 hover:bg-green-700"
-      }
-    `}
+                className={`px-4 py-2 rounded-lg text-white ${
+                  records.length === 0
+                    ? "bg-gray-400"
+                    : "bg-green-600"
+                }`}
               >
                 Confirm Voucher
               </button>
@@ -258,7 +251,6 @@ const SaleList = () => {
           </form>
         </div>
 
-        {/* Recent sales table */}
         <VoucherList />
       </section>
     </Container>

@@ -1,8 +1,22 @@
 import React from "react";
+import useSWR from "swr";
 import ModuleBtn from "../components/ModuleBtn";
 import Container from "../components/Container";
 
 const DashboardPage = () => {
+  // Fetch products and vouchers
+  const { data: products } = useSWR(import.meta.env.VITE_API_URL + '/products', (url) => fetch(url).then(res => res.json()));
+  const { data: vouchers } = useSWR(import.meta.env.VITE_API_URL + '/vouchers', (url) => fetch(url).then(res => res.json()));
+
+  // Compute today's overview
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayVouchers = Array.isArray(vouchers)
+    ? vouchers.filter(v => v.date && v.date.slice(0, 10) === todayStr)
+    : [];
+  const todaySales = todayVouchers.reduce((sum, v) => sum + (v.items?.length || 0), 0);
+  const todayRevenue = todayVouchers.reduce((sum, v) => sum + (v.grandTotal || 0), 0);
+  const productCount = Array.isArray(products) ? products.length : 0;
+
   return (
     <Container>
       <div className="w-full">
@@ -90,30 +104,73 @@ const DashboardPage = () => {
 
         {/* Today Overview Section */}
         <div className="mt-10">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">Today Overview</h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-xl text-center shadow-sm border border-blue-100">
-              <p className="text-2xl font-bold text-blue-700">120</p>
-              <p className="text-gray-600 text-sm">Products</p>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-6">Today's Overview</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {/* Total Products */}
+            <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+              <div className="p-3 bg-blue-100 rounded-full text-blue-700 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{productCount}</p>
+                <p className="text-gray-500 text-sm">Total Products</p>
+              </div>
             </div>
 
-            <div className="bg-green-50 p-4 rounded-xl text-center shadow-sm border border-green-100">
-              <p className="text-2xl font-bold text-green-700">32</p>
-              <p className="text-gray-600 text-sm">Sales Today</p>
+            {/* Today Sales */}
+            <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+              <div className="p-3 bg-green-100 rounded-full text-green-700 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{todaySales}</p>
+                <p className="text-gray-500 text-sm">Today Sales</p>
+              </div>
             </div>
 
-            <div className="bg-purple-50 p-4 rounded-xl text-center shadow-sm border border-purple-100">
-              <p className="text-2xl font-bold text-purple-700">58</p>
-              <p className="text-gray-600 text-sm">Vouchers</p>
-            </div>
+            {/* Today Revenue */}
+            {/* Today Revenue */}
+<div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+  <div className="p-3 bg-yellow-100 rounded-full text-yellow-700 mr-4">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+      viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z" />
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M12 2v2m0 16v2m8-10h2M2 12H4" />
+    </svg>
+  </div>
+  <div>
+    <p className="text-2xl font-bold text-gray-800">
+      {Math.round(todayRevenue).toLocaleString("en-US")} Ks
+    </p>
+    <p className="text-gray-500 text-sm">Today Revenue</p>
+  </div>
+</div>
 
-            <div className="bg-red-50 p-4 rounded-xl text-center shadow-sm border border-red-100">
-              <p className="text-2xl font-bold text-red-700">4</p>
-              <p className="text-gray-600 text-sm">Low Stock</p>
+
+            {/* Low Stock Items */}
+            <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+              <div className="p-3 bg-red-100 rounded-full text-red-700 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 0v4m0-4h4m-4 0H8" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">4</p>
+                <p className="text-gray-500 text-sm">Low Stock Items</p>
+              </div>
             </div>
           </div>
         </div>
+
       </div>
     </Container>
   );

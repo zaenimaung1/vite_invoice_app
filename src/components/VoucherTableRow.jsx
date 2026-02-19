@@ -48,7 +48,7 @@ const handleDelete = () => {
           </div>
         </div>
       </td>
-      <td className="px-4 py-4 text-right font-medium text-gray-800">{price.toFixed(2)}</td>
+      <td className="px-4 py-4 text-right font-medium text-gray-800">{fmt((price * qty).toFixed(2))}</td>
       <td className="px-4 py-4  text-gray-500 text-center">
         <div className="inline-flex items-center gap-2 justify-center">
             <button  className='px-2 bg-gray-300 text-black rounded active:scale-50' onClick={handleDecrease}>-</button>

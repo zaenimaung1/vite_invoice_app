@@ -1,20 +1,25 @@
-import React, { useState } from 'react'
-import { useSWRConfig } from 'swr';
-import { newtonsCradle } from 'ldrs'
-import toast from 'react-hot-toast';
-import { Link } from 'react-router';
+import React, { useState } from "react";
+import { useSWRConfig } from "swr";
+import { newtonsCradle } from "ldrs";
+import toast from "react-hot-toast";
+import { Link } from "react-router-dom"; // updated import
 
-newtonsCradle.register()
+newtonsCradle.register();
 
 const ProductDataList = ({ product = {} }) => {
-  const { id, name, price, created_at, stock } = product;
+  const { id, name, price, created_at } = product;
 
+  // Format date (en-GB style)
   const date = new Date(created_at);
-  const formattedDate = date.toLocaleDateString('en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+  const formattedDate = date.toLocaleDateString("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
+
+  // Format price as MMK
+  const formatMMK = (price) =>
+    price ? Number(price).toLocaleString("en-US") + " Ks" : "-";
 
   const { mutate } = useSWRConfig();
   const [loading, setLoading] = useState(false);
@@ -23,10 +28,10 @@ const ProductDataList = ({ product = {} }) => {
     setLoading(true);
 
     await fetch(import.meta.env.VITE_API_URL + `/products/${id}`, {
-      method: 'DELETE'
+      method: "DELETE",
     });
 
-    mutate(import.meta.env.VITE_API_URL + '/products');
+    mutate(import.meta.env.VITE_API_URL + "/products");
     setLoading(false);
     toast.success(`${name} deleted successfully!`);
   };
@@ -46,32 +51,33 @@ const ProductDataList = ({ product = {} }) => {
       </td>
 
       <td className="px-4 py-4 text-right font-medium text-gray-800">
-        {price ? `$ ${Number(price).toLocaleString()}` : "-"}
+        {formatMMK(price)}
       </td>
-
-      <td className="px-4 py-4 text-right text-sm text-gray-600">{typeof stock === 'number' ? stock : '-'}</td>
 
       <td className="px-4 py-4 text-sm text-gray-500">{formattedDate}</td>
 
       <td className="px-4 py-4 text-right">
         <div className="inline-flex items-center gap-2 justify-end">
-          <Link to={`/product/edit/${id}`} className="px-3 py-1 text-xs text-indigo-700 bg-indigo-50 rounded-full hover:bg-indigo-100">
+          <Link
+            to={`/product/edit/${id}`}
+            className="px-3 py-1 text-xs text-indigo-700 bg-indigo-50 rounded-full hover:bg-indigo-100"
+          >
             Edit
           </Link>
 
           {loading ? (
-      <div className="flex items-center justify-center w-12">
-        <l-newtons-cradle size="24" speed="2.4" color="red"></l-newtons-cradle>
-      </div>
-    ) : (
-      <button
-        onClick={deleteProductBtn}
-        aria-label="Delete product"
-        className="px-3 py-1 text-xs text-red-700 bg-red-50 rounded-full hover:bg-red-100"
-      >
-        Delete
-      </button>
-    )}
+            <div className="flex items-center justify-center w-12">
+              <l-newtons-cradle size="24" speed="2.4" color="red"></l-newtons-cradle>
+            </div>
+          ) : (
+            <button
+              onClick={deleteProductBtn}
+              aria-label="Delete product"
+              className="px-3 py-1 text-xs text-red-700 bg-red-50 rounded-full hover:bg-red-100"
+            >
+              Delete
+            </button>
+          )}
         </div>
       </td>
     </tr>

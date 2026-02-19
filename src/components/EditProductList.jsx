@@ -29,7 +29,6 @@ const EditProductList = () => {
       body: JSON.stringify({
         name: data.name,
         price: data.price,
-        stock: data.stock ?? 0,
         created_at: new Date().toISOString()
       })
     });
@@ -75,16 +74,7 @@ const EditProductList = () => {
           />
         </div>
 
-        {/* Stock */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Stock</label>
-          <input
-            type="number"
-            defaultValue={data.stock}
-            {...register("stock", { required: true, min: 0 })}
-            className="w-full px-3 py-2 border rounded-lg"
-          />
-        </div>
+      
 
         {/* Checkbox */}
         <div className="flex items-center gap-2">

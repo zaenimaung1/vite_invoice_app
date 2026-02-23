@@ -10,7 +10,6 @@ const Header = () => {
             <h1 className="text-lg font-semibold text-gray-800">Voucher App</h1>
             <p className="text-xs text-gray-500">KiBo Software</p>
           </div>
-         
         </div>
       </Container>
     </header>

@@ -6,7 +6,7 @@ import { Toaster } from 'react-hot-toast'
 
 const Layout = () => {
   return (
-    <main className="min-h-screen bg-gray-100 flex flex-col">
+    <main className="min-h-screen bg-gray-100 text-gray-900 flex flex-col">
       <Header />
       <Container as="section" className="flex-1 py-8">
         <Outlet />

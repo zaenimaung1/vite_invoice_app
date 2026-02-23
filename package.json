@@ -8,11 +8,13 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "api": "json-server --watch data.json --port 8000 --delay 700"
+    "api": "node server.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",
     "axios": "^1.13.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "flowbite": "^4.0.1",
     "ldrs": "^1.1.9",
     "react": "^19.2.0",

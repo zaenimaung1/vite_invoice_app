@@ -8,14 +8,47 @@ const DashboardPage = () => {
   const { data: products } = useSWR(import.meta.env.VITE_API_URL + '/products', (url) => fetch(url).then(res => res.json()));
   const { data: vouchers } = useSWR(import.meta.env.VITE_API_URL + '/vouchers', (url) => fetch(url).then(res => res.json()));
 
+  const activeVouchers = Array.isArray(vouchers) ? vouchers.filter((v) => !v.deleted) : [];
+
   // Compute today's overview
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayVouchers = Array.isArray(vouchers)
-    ? vouchers.filter(v => v.date && v.date.slice(0, 10) === todayStr)
+  const todayVouchers = activeVouchers
+    ? activeVouchers.filter(v => v.date && v.date.slice(0, 10) === todayStr)
     : [];
   const todaySales = todayVouchers.reduce((sum, v) => sum + (v.items?.length || 0), 0);
   const todayRevenue = todayVouchers.reduce((sum, v) => sum + (v.grandTotal || 0), 0);
   const productCount = Array.isArray(products) ? products.length : 0;
+
+  // Daily record chart (last 14 days)
+  const DAYS = 14;
+  const dailyRecords = React.useMemo(() => {
+    const map = new Map();
+    for (const v of activeVouchers) {
+      const day = v?.date ? String(v.date).slice(0, 10) : null;
+      if (!day) continue;
+      const prev = map.get(day) || { date: day, total: 0, count: 0 };
+      map.set(day, {
+        date: day,
+        total: prev.total + Number(v.grandTotal || 0),
+        count: prev.count + 1,
+      });
+    }
+
+    const days = [];
+    const start = new Date();
+    start.setDate(start.getDate() - (DAYS - 1));
+    for (let i = 0; i < DAYS; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      days.push(map.get(key) || { date: key, total: 0, count: 0 });
+    }
+    return days;
+  }, [activeVouchers]);
+
+  const maxTotal = React.useMemo(() => {
+    return dailyRecords.reduce((m, r) => (r.total > m ? r.total : m), 0) || 1;
+  }, [dailyRecords]);
 
   return (
     <Container>
@@ -30,7 +63,7 @@ const DashboardPage = () => {
         <div className="bg-white shadow-lg rounded-2xl p-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">Modules</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <ModuleBtn
               name="Voucher"
               icon={
@@ -99,6 +132,29 @@ const DashboardPage = () => {
               }
               url="/product"
             />
+
+            <ModuleBtn
+              name="AI Mode"
+              icon={
+                <div className="bg-orange-100 p-4 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-10 text-orange-600"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9.5 6.75h5m-5 3.5h5m-7.5 8.5h10.5a2.25 2.25 0 0 0 2.25-2.25V5.25A2.25 2.25 0 0 0 17.5 3H6.5A2.25 2.25 0 0 0 4.25 5.25V16.5A2.25 2.25 0 0 0 6.5 18.75Z"
+                    />
+                  </svg>
+                </div>
+              }
+              url="/ai"
+            />
           </div>
         </div>
 
@@ -135,24 +191,23 @@ const DashboardPage = () => {
             </div>
 
             {/* Today Revenue */}
-            {/* Today Revenue */}
-<div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
-  <div className="p-3 bg-yellow-100 rounded-full text-yellow-700 mr-4">
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
-      viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z" />
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M12 2v2m0 16v2m8-10h2M2 12H4" />
-    </svg>
-  </div>
-  <div>
-    <p className="text-2xl font-bold text-gray-800">
-      {Math.round(todayRevenue).toLocaleString("en-US")} Ks
-    </p>
-    <p className="text-gray-500 text-sm">Today Revenue</p>
-  </div>
-</div>
+            <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+              <div className="p-3 bg-yellow-100 rounded-full text-yellow-700 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z" />
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M12 2v2m0 16v2m8-10h2M2 12H4" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">
+                  {Math.round(todayRevenue).toLocaleString("en-US")} Ks
+                </p>
+                <p className="text-gray-500 text-sm">Today Revenue</p>
+              </div>
+            </div>
 
 
             {/* Low Stock Items */}
@@ -171,6 +226,8 @@ const DashboardPage = () => {
           </div>
         </div>
 
+        {/* Daily Record Chart */}
+        
       </div>
     </Container>
   );

@@ -24,16 +24,30 @@ const ProductDataList = ({ product = {} }) => {
   const { mutate } = useSWRConfig();
   const [loading, setLoading] = useState(false);
 
-  const deleteProductBtn = async () => {
+  const deleteProductBtn = async (id, name) => {
     setLoading(true);
-
-    await fetch(import.meta.env.VITE_API_URL + `/products/${id}`, {
-      method: "DELETE",
-    });
-
-    mutate(import.meta.env.VITE_API_URL + "/products");
-    setLoading(false);
-    toast.success(`${name} deleted successfully!`);
+  
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/products/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error("Delete failed");
+      }
+  
+      // refresh products
+      mutate(`${import.meta.env.VITE_API_URL}/products`);
+  
+      toast.success(`${name} deleted successfully!`);
+    } catch (e) {
+      toast.error("Failed to delete product.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,7 +85,7 @@ const ProductDataList = ({ product = {} }) => {
             </div>
           ) : (
             <button
-              onClick={deleteProductBtn}
+            onClick={() => deleteProductBtn(product.id, product.name)}
               aria-label="Delete product"
               className="px-3 py-1 text-xs text-red-700 bg-red-50 rounded-full hover:bg-red-100"
             >

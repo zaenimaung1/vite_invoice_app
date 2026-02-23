@@ -1,28 +1,10 @@
 {
   "products": [
     {
-      "id": 1,
-      "name": "Bottled Water",
-      "price": 3150,
-      "created_at": "2026-02-19T08:00:00Z"
-    },
-    {
-      "id": 2,
-      "name": "Instant Noodles",
-      "price": 2079,
-      "created_at": "2026-02-19T08:05:00Z"
-    },
-    {
-      "id": 3,
-      "name": "Chocolate Bar",
-      "price": 2520,
-      "created_at": "2026-02-19T08:10:00Z"
-    },
-    {
       "id": 4,
-      "name": "Soda Can",
-      "price": 2100,
-      "created_at": "2026-02-19T08:15:00Z"
+      "name": "Soda Candy",
+      "price": "2100",
+      "created_at": "2026-02-23T15:48:00.325Z"
     },
     {
       "id": 5,
@@ -125,92 +107,38 @@
       "price": "3000",
       "created_at": "2026-02-19T14:03:56.824Z",
       "id": 21
+    },
+    {
+      "id": 22,
+      "name": "zarnimaung1",
+      "price": "3000",
+      "created_at": "2026-02-23T15:50:35.493Z"
     }
   ],
   "vouchers": [
     {
-      "id": 1,
       "username": "Zar Ni",
-      "phoneNumber": "09776908300",
-      "voucherId": "V-333WD",
-      "date": "2026-02-19T14:16:56.294Z",
+      "phoneNumber": "0956565656",
+      "voucherId": "V-JZ66Q",
+      "date": "2026-02-23T17:09:10.490Z",
       "items": [
         {
-          "id": 1771510605489,
+          "id": 1771866534693,
           "product": {
-            "id": 7,
-            "name": "Coffee Cup",
-            "price": 3780,
-            "created_at": "2026-02-19T08:30:00Z"
+            "id": 5,
+            "name": "Sandwich",
+            "price": 5250,
+            "created_at": "2026-02-19T08:20:00Z"
           },
-          "quantity": 4,
-          "cost": 15120,
-          "created_at": "2026-02-19T14:16:45.489Z"
+          "quantity": 1,
+          "cost": 5250,
+          "created_at": "2026-02-23T17:08:54.693Z"
         }
       ],
-      "subTotal": 15120,
-      "tax": 1209.6000000000001,
-      "grandTotal": 16329.6
-    },
-    {
-      "id": 2,
-      "username": "Kyi Nue Cho",
-      "phoneNumber": "09776908300",
-      "voucherId": "V-SR3KK",
-      "date": "2026-02-19T14:22:36.972Z",
-      "items": [
-        {
-          "id": 1771510900486,
-          "product": {
-            "id": 1,
-            "name": "Bottled Water",
-            "price": 3150,
-            "created_at": "2026-02-19T08:00:00Z"
-          },
-          "quantity": 3,
-          "cost": 9450,
-          "created_at": "2026-02-19T14:21:40.486Z"
-        },
-        {
-          "id": 1771510908798,
-          "product": {
-            "id": 3,
-            "name": "Chocolate Bar",
-            "price": 2520,
-            "created_at": "2026-02-19T08:10:00Z"
-          },
-          "quantity": 2,
-          "cost": 5040,
-          "created_at": "2026-02-19T14:21:48.798Z"
-        }
-      ],
-      "subTotal": 14490,
-      "tax": 1159.2,
-      "grandTotal": 15649.2
-    },
-    {
-      "username": "Nway Nway",
-      "phoneNumber": "09776908300",
-      "voucherId": "V-YKXI0",
-      "date": "2026-02-19T14:51:05.133Z",
-      "items": [
-        {
-          "id": 1771512660168,
-          "product": {
-            "id": 11,
-            "name": "Energy Drink",
-            "price": 3150,
-            "created_at": "2026-02-19T08:50:00Z"
-          },
-          "quantity": 3,
-          "cost": 9450,
-          "created_at": "2026-02-19T14:51:00.168Z"
-        }
-      ],
-      "subTotal": 9450,
-      "tax": 756,
-      "grandTotal": 10206,
-      "id": 3
+      "subTotal": 5250,
+      "tax": 420,
+      "grandTotal": 5670,
+      "id": 1
     }
   ]
 }

@@ -7,6 +7,7 @@ import SalePage from "./pages/SalePage";
 import ErrorPage from "./pages/ErrorPage";
 import CreateProductPage from "./pages/CreateProductPage";
 import EditProductPage from "./pages/EditProductPage";
+import PredictionPage from "./pages/PredictionPage";
 
 
 
@@ -35,11 +36,18 @@ const rounter = createBrowserRouter([
             {
                 path: "/voucher",
                 element: <VoucherPage />,
+            },            {
+                path: "/voucher/:id",
+                element: <VoucherPage />,
             },
             
             {
                 path :"/sale",
                 element: <SalePage />,
+            },
+            {
+                path: "/ai",
+                element: <PredictionPage />,
             }
 
         ]

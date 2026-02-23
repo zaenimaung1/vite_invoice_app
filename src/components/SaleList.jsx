@@ -4,6 +4,7 @@ import Container from "./Container";
 import useSWR from "swr";
 import useRecordStore from "../store/useRecordStroe";
 import VoucherList from "./SaleTable";
+import toast from "react-hot-toast";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -57,17 +58,17 @@ const SaleList = () => {
     const phoneRegex = /^09\d{5,9}$/;
 
     if (!values.username || !values.phoneNumber) {
-      alert("Please enter username and phone number.");
+      toast.error("Please enter username and phone number.");
       return;
     }
 
     if (!phoneRegex.test(values.phoneNumber)) {
-      alert("Phone number must start with 09 and be between 7 and 11 digits.");
+      toast.error("Phone number must start with 09 and be between 7 and 11 digits.");
       return;
     }
 
     if (records.length === 0) {
-      alert("You must add at least one product.");
+      toast.error("You must add at least one product.");
       return;
     }
 
@@ -98,13 +99,13 @@ const SaleList = () => {
 
       if (!res.ok) throw new Error("Failed to save voucher");
 
-      alert("Voucher Confirmed!");
+      toast.success("Voucher confirmed!");
 
       resetRecords();
       reset();
     } catch (error) {
       console.error("Error saving voucher:", error);
-      alert("Error saving voucher");
+      toast.error("Error saving voucher");
     }
   };
 

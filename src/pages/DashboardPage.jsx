@@ -2,8 +2,10 @@ import React from "react";
 import useSWR from "swr";
 import ModuleBtn from "../components/ModuleBtn";
 import Container from "../components/Container";
+import { useSettings } from "../context/SettingsContext.jsx";
 
 const DashboardPage = () => {
+  const { formatCurrency, t } = useSettings();
   // Fetch products and vouchers
   const { data: products } = useSWR(import.meta.env.VITE_API_URL + '/products', (url) => fetch(url).then(res => res.json()));
   const { data: vouchers } = useSWR(import.meta.env.VITE_API_URL + '/vouchers', (url) => fetch(url).then(res => res.json()));
@@ -17,55 +19,85 @@ const DashboardPage = () => {
     : [];
   const todaySales = todayVouchers.reduce((sum, v) => sum + (v.items?.length || 0), 0);
   const todayRevenue = todayVouchers.reduce((sum, v) => sum + (v.grandTotal || 0), 0);
+  const monthlyRevenue = activeVouchers.reduce((sum, v) => {
+    if (v.date && v.date.slice(0, 7) === todayStr.slice(0, 7)) {
+      return sum + (v.grandTotal || 0);
+    }
+    return sum;
+  }, 0);
   const productCount = Array.isArray(products) ? products.length : 0;
 
-  // Daily record chart (last 14 days)
-  const DAYS = 14;
-  const dailyRecords = React.useMemo(() => {
+  const todayProductSlices = React.useMemo(() => {
     const map = new Map();
-    for (const v of activeVouchers) {
-      const day = v?.date ? String(v.date).slice(0, 10) : null;
-      if (!day) continue;
-      const prev = map.get(day) || { date: day, total: 0, count: 0 };
-      map.set(day, {
-        date: day,
-        total: prev.total + Number(v.grandTotal || 0),
-        count: prev.count + 1,
-      });
+    for (const v of todayVouchers) {
+      for (const it of v.items || []) {
+        const name = it.product?.name || "Unknown";
+        const amount = Number(it.cost || 0);
+        map.set(name, (map.get(name) || 0) + amount);
+      }
     }
+    const entries = Array.from(map.entries());
+    const total = entries.reduce((sum, [, value]) => sum + value, 0);
+    if (!total) return [];
 
-    const days = [];
-    const start = new Date();
-    start.setDate(start.getDate() - (DAYS - 1));
-    for (let i = 0; i < DAYS; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const key = d.toISOString().slice(0, 10);
-      days.push(map.get(key) || { date: key, total: 0, count: 0 });
-    }
-    return days;
-  }, [activeVouchers]);
+    return entries
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({
+        name,
+        value,
+        percent: (value / total) * 100,
+      }));
+  }, [todayVouchers]);
 
-  const maxTotal = React.useMemo(() => {
-    return dailyRecords.reduce((m, r) => (r.total > m ? r.total : m), 0) || 1;
-  }, [dailyRecords]);
+  const chartTypes = [
+    { value: "donut", label: "Donut" },
+    { value: "pie", label: "Pie" },
+    { value: "bar", label: "Bar" },
+    { value: "radar", label: "Radar" },
+  ];
+
+  const [chartType, setChartType] = React.useState("donut");
+
+  const slicePalette = ["#4f46e5", "#22c55e", "#f97316", "#e11d48", "#0ea5e9", "#a855f7"];
+
+  const pieGradient = React.useMemo(() => {
+    if (!todayProductSlices.length) return "";
+    let current = 0;
+    const segments = todayProductSlices.map((slice, idx) => {
+      const start = current;
+      const end = current + slice.percent;
+      const color = slicePalette[idx % slicePalette.length];
+      current = end;
+      return `${color} ${start}% ${end}%`;
+    });
+    return `conic-gradient(${segments.join(", ")})`;
+  }, [todayProductSlices, slicePalette]);
+
+  const radarSlices = React.useMemo(() => {
+    return todayProductSlices.slice(0, 6);
+  }, [todayProductSlices]);
+
+  const maxRadarValue = React.useMemo(() => {
+    if (!radarSlices.length) return 1;
+    return radarSlices.reduce((m, s) => (s.value > m ? s.value : m), 0) || 1;
+  }, [radarSlices]);
 
   return (
     <Container>
       <div className="w-full">
         {/* Header */}
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">{t("dashboard")}</h1>
         <p className="text-gray-500 mb-6">
-          Choose a module to get started managing your system.
+          {t("dashboardSubtitle")}
         </p>
 
         {/* Card Section */}
         <div className="bg-white shadow-lg rounded-2xl p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Modules</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">{t("modules")}</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ModuleBtn
-              name="Voucher"
+              name={t("voucher")}
               icon={
                 <div className="bg-blue-100 p-4 rounded-full">
                   <svg
@@ -88,7 +120,7 @@ const DashboardPage = () => {
             />
 
             <ModuleBtn
-              name="Sale"
+              name={t("sale")}
               icon={
                 <div className="bg-green-100 p-4 rounded-full">
                   <svg
@@ -111,7 +143,7 @@ const DashboardPage = () => {
             />
 
             <ModuleBtn
-              name="Product"
+              name={t("product")}
               icon={
                 <div className="bg-purple-100 p-4 rounded-full">
                   <svg
@@ -133,46 +165,28 @@ const DashboardPage = () => {
               url="/product"
             />
 
-            <ModuleBtn
-              name="AI Mode"
-              icon={
-                <div className="bg-orange-100 p-4 rounded-full">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="size-10 text-orange-600"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.5 6.75h5m-5 3.5h5m-7.5 8.5h10.5a2.25 2.25 0 0 0 2.25-2.25V5.25A2.25 2.25 0 0 0 17.5 3H6.5A2.25 2.25 0 0 0 4.25 5.25V16.5A2.25 2.25 0 0 0 6.5 18.75Z"
-                    />
-                  </svg>
-                </div>
-              }
-              url="/ai"
-            />
           </div>
         </div>
 
         {/* Today Overview Section */}
         <div className="mt-10">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-6">Today's Overview</h2>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-6">{t("overview")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {/* Total Products */}
             <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
               <div className="p-3 bg-blue-100 rounded-full text-blue-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z"
+                  />
                 </svg>
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-800">{productCount}</p>
-                <p className="text-gray-500 text-sm">Total Products</p>
+                <p className="text-gray-500 text-sm">{t("totalProducts")}</p>
               </div>
             </div>
 
@@ -181,12 +195,13 @@ const DashboardPage = () => {
               <div className="p-3 bg-green-100 rounded-full text-green-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 17l6-6 4 4 7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 8h6v6" />
                 </svg>
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-800">{todaySales}</p>
-                <p className="text-gray-500 text-sm">Today Sales</p>
+                <p className="text-gray-500 text-sm">{t("todaySales")}</p>
               </div>
             </div>
 
@@ -195,39 +210,191 @@ const DashboardPage = () => {
               <div className="p-3 bg-yellow-100 rounded-full text-yellow-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z" />
-                  <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M12 2v2m0 16v2m8-10h2M2 12H4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18v10H3V7z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.5a2.5 2.5 0 1 1 0 5a2.5 2.5 0 0 1 0-5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9.5c1.5 0 2.5-1 2.5-2.5M21 9.5c-1.5 0-2.5-1-2.5-2.5M3 14.5c1.5 0 2.5 1 2.5 2.5M21 14.5c-1.5 0-2.5 1-2.5 2.5" />
                 </svg>
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-800">
-                  {Math.round(todayRevenue).toLocaleString("en-US")} Ks
+                  {formatCurrency(Math.round(todayRevenue))}
                 </p>
-                <p className="text-gray-500 text-sm">Today Revenue</p>
+                <p className="text-gray-500 text-sm">{t("todayRevenue")}</p>
               </div>
             </div>
 
 
-            {/* Low Stock Items */}
+            {/* Monthly Revenue */}
             <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
               <div className="p-3 bg-red-100 rounded-full text-red-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 0v4m0-4h4m-4 0H8" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v4M16 3v4M3 9h18" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-800">4</p>
-                <p className="text-gray-500 text-sm">Low Stock Items</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {formatCurrency(Math.round(monthlyRevenue))}
+                </p>
+                <p className="text-gray-500 text-sm">{t("monthlyRevenue")}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Daily Record Chart */}
-        
+        {/* Charts */}
+        <div className="mt-10">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-700">{t("todayProductShare")}</h2>
+                <p className="text-gray-500 text-sm">{t("todayProductShareDesc")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500" htmlFor="chartType">
+                  {t("chartType")}
+                </label>
+                <select
+                  id="chartType"
+                  value={chartType}
+                  onChange={(event) => setChartType(event.target.value)}
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                >
+                  {chartTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {todayProductSlices.length === 0 ? (
+              <div className="text-sm text-gray-500 italic mt-4">{t("noSalesToday")}</div>
+            ) : (
+              <div className="mt-4 flex flex-col items-center gap-4">
+                {chartType === "bar" && (
+                  <div className="w-full space-y-3">
+                    {todayProductSlices.map((slice, idx) => {
+                      const color = slicePalette[idx % slicePalette.length];
+                      return (
+                        <div key={slice.name} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs text-gray-600">
+                            <span className="truncate max-w-[220px]">{slice.name}</span>
+                            <span>{slice.percent.toFixed(1)}%</span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-gray-100">
+                            <div
+                              className="h-2 rounded-full"
+                              style={{ width: `${slice.percent}%`, backgroundColor: color }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {(chartType === "pie" || chartType === "donut") && (
+                  <div className="relative w-40 h-40">
+                    <div
+                      className="w-40 h-40 rounded-full shadow-inner"
+                      style={{
+                        backgroundImage: pieGradient,
+                      }}
+                    />
+                    {chartType === "donut" && (
+                      <div className="absolute inset-0 m-6 rounded-full bg-white shadow-inner" />
+                    )}
+                  </div>
+                )}
+
+                {chartType === "radar" && (
+                  <div className="w-full flex justify-center">
+                    <svg width="220" height="220" viewBox="0 0 220 220">
+                      <g transform="translate(110 110)">
+                        {[0.33, 0.66, 1].map((scale) => {
+                          const points = radarSlices
+                            .map((_, idx) => {
+                              const angle = (Math.PI * 2 * idx) / radarSlices.length - Math.PI / 2;
+                              const r = 80 * scale;
+                              const x = r * Math.cos(angle);
+                              const y = r * Math.sin(angle);
+                              return `${x},${y}`;
+                            })
+                            .join(" ");
+                          return (
+                            <polygon
+                              key={scale}
+                              points={points}
+                              fill="none"
+                              stroke="#e5e7eb"
+                              strokeWidth="1"
+                            />
+                          );
+                        })}
+                        {radarSlices.map((_, idx) => {
+                          const angle = (Math.PI * 2 * idx) / radarSlices.length - Math.PI / 2;
+                          const x = 80 * Math.cos(angle);
+                          const y = 80 * Math.sin(angle);
+                          return (
+                            <line
+                              key={idx}
+                              x1="0"
+                              y1="0"
+                              x2={x}
+                              y2={y}
+                              stroke="#e5e7eb"
+                              strokeWidth="1"
+                            />
+                          );
+                        })}
+                        <polygon
+                          points={radarSlices
+                            .map((slice, idx) => {
+                              const angle = (Math.PI * 2 * idx) / radarSlices.length - Math.PI / 2;
+                              const r = (slice.value / maxRadarValue) * 80;
+                              const x = r * Math.cos(angle);
+                              const y = r * Math.sin(angle);
+                              return `${x},${y}`;
+                            })
+                            .join(" ")}
+                          fill="rgba(79, 70, 229, 0.25)"
+                          stroke="#4f46e5"
+                          strokeWidth="2"
+                        />
+                      </g>
+                    </svg>
+                  </div>
+                )}
+
+                <div className="w-full space-y-2 text-xs">
+                  {todayProductSlices.map((slice, idx) => {
+                    const color = slicePalette[idx % slicePalette.length];
+                    return (
+                      <div key={slice.name} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="inline-block h-2 w-2 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className="text-gray-700 truncate max-w-[160px]">
+                            {slice.name}
+                          </span>
+                        </div>
+                        <div className="text-gray-500">
+                          {slice.percent.toFixed(1)}%
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </Container>
   );

@@ -1,6 +1,8 @@
 import { Link } from "react-router";
+import { useSettings } from "../context/SettingsContext.jsx";
 
 const BreadCrumb = ({ currentPageTitle, link }) => {
+  const { t } = useSettings();
   return (
     <div className="w-full flex gap-3 mb-5">
       <nav className="flex" aria-label="Breadcrumb">
@@ -27,7 +29,7 @@ const BreadCrumb = ({ currentPageTitle, link }) => {
                   d="m4 12 8-8 8 8M6 10.5V19a1 1 0 0 0 1 1h3v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h3a1 1 0 0 0 1-1v-8.5"
                 />
               </svg>
-              Home
+              {t("home")}
             </Link>
           </li>
 

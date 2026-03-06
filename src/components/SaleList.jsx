@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import Container from "./Container";
 import useSWR from "swr";
 import useRecordStore from "../store/useRecordStroe";
 import VoucherList from "./SaleTable";
@@ -124,14 +123,13 @@ const SaleList = () => {
   }, [data]);
 
   return (
-    <Container>
       <section className="w-full">
         <div
           className={`rounded-xl shadow-sm border p-6 ${
-            isDark ? "bg-slate-900 border-slate-700" : "bg-white border-gray-200"
+            isDark ? "bg-[#1E1F23] border-[#2E2E33]" : "bg-white border-gray-200"
           }`}
         >
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? "text-slate-100" : "text-gray-800"}`}>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>
             {t("addSale")}
           </h3>
 
@@ -141,15 +139,15 @@ const SaleList = () => {
           >
             {/* Voucher ID */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-200" : "text-gray-700"}`}>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
                 {t("voucherId")}
               </label>
               <input
                 value={voucherId}
                 readOnly
-                className={`w-full px-3 py-2 rounded-lg border ${
+                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring ${
                   isDark
-                    ? "bg-slate-800 border-slate-700 text-slate-100"
+                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
                     : "bg-white border-gray-200 text-gray-800"
                 }`}
               />
@@ -157,7 +155,7 @@ const SaleList = () => {
 
             {/* Customer Name */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-200" : "text-gray-700"}`}>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
                 {t("customerName")}
               </label>
               <input
@@ -165,9 +163,9 @@ const SaleList = () => {
                 {...register("username", {
                   required: "Customer name is required",
                 })}
-                className={`border p-2 rounded w-full ${
+                className={`border p-2 rounded w-full focus:outline-none focus:ring-2 accent-ring ${
                   isDark
-                    ? "bg-slate-800 border-slate-700 text-slate-100"
+                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
                     : "bg-white border-gray-200 text-gray-800"
                 }`}
               />
@@ -180,7 +178,7 @@ const SaleList = () => {
 
             {/* Phone Number */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-200" : "text-gray-700"}`}>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
                 {t("phoneNumberLabel")}
               </label>
               <input
@@ -194,9 +192,9 @@ const SaleList = () => {
                       "Phone must start with 09 and be 7-11 digits",
                   },
                 })}
-                className={`border p-2 rounded w-full ${
+                className={`border p-2 rounded w-full focus:outline-none focus:ring-2 accent-ring ${
                   isDark
-                    ? "bg-slate-800 border-slate-700 text-slate-100"
+                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
                     : "bg-white border-gray-200 text-gray-800"
                 }`}
               />
@@ -209,7 +207,7 @@ const SaleList = () => {
 
             {/* Product */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-200" : "text-gray-700"}`}>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
                 {t("productLabel")}
               </label>
               <Controller
@@ -229,20 +227,20 @@ const SaleList = () => {
   styles={{
     control: (base, state) => ({
       ...base,
-      backgroundColor: isDark ? "#0f172a" : "#ffffff",
+      backgroundColor: isDark ? "#2A2D34" : "#ffffff",
       borderColor: state.isFocused
         ? isDark
-          ? "#475569"
-          : "#6366f1"
+          ? "#A3E635"
+          : "#A3E635"
         : isDark
-        ? "#334155"
+        ? "#3F3F46"
         : "#e5e7eb",
       boxShadow: state.isFocused
         ? isDark
-          ? "0 0 0 2px rgba(71,85,105,0.4)"
-          : "0 0 0 2px rgba(99,102,241,0.2)"
+          ? "0 0 0 2px rgba(163, 230, 53, 0.35)"
+          : "0 0 0 2px rgba(163, 230, 53, 0.2)"
         : "none",
-      color: isDark ? "#f1f5f9" : "#1f2937",
+      color: isDark ? "#F5F5F5" : "#1f2937",
     }),
     menuPortal: (base) => ({
       ...base,
@@ -250,36 +248,36 @@ const SaleList = () => {
     }),
     menu: (base) => ({
       ...base,
-      backgroundColor: isDark ? "#0f172a" : "#ffffff",
-      border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
+      backgroundColor: isDark ? "#2A2D34" : "#ffffff",
+      border: isDark ? "1px solid #3F3F46" : "1px solid #e5e7eb",
     }),
     option: (base, state) => ({
       ...base,
       backgroundColor: state.isSelected
-        ? "#6366f1"
+        ? "#A3E635"
         : state.isFocused
         ? isDark
-          ? "#1e293b"
-          : "#eef2ff"
+          ? "#32353D"
+          : "rgba(163, 230, 53, 0.15)"
         : "transparent",
       color: state.isSelected
-        ? "#ffffff"
+        ? "#1E1F23"
         : isDark
-        ? "#f1f5f9"
+        ? "#F5F5F5"
         : "#1f2937",
       cursor: "pointer",
     }),
     singleValue: (base) => ({
       ...base,
-      color: isDark ? "#f1f5f9" : "#1f2937",
+      color: isDark ? "#F5F5F5" : "#1f2937",
     }),
     input: (base) => ({
       ...base,
-      color: isDark ? "#f1f5f9" : "#1f2937",
+      color: isDark ? "#F5F5F5" : "#1f2937",
     }),
     placeholder: (base) => ({
       ...base,
-      color: isDark ? "#94a3b8" : "#9ca3af",
+      color: isDark ? "#71717A" : "#9ca3af",
     }),
   }}
 />
@@ -294,7 +292,7 @@ const SaleList = () => {
 
             {/* Quantity */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-200" : "text-gray-700"}`}>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
                 {t("quantityLabel")}
               </label>
               <input
@@ -303,9 +301,9 @@ const SaleList = () => {
                   required: true,
                   min: 1,
                 })}
-                className={`w-full px-3 py-2 rounded-lg border ${
+                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring ${
                   isDark
-                    ? "bg-slate-800 border-slate-700 text-slate-100"
+                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
                     : "bg-white border-gray-200 text-gray-800"
                 }`}
               />
@@ -313,26 +311,26 @@ const SaleList = () => {
 
             {/* Date */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-200" : "text-gray-700"}`}>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
                 {t("dateLabel")}
               </label>
               <input
                 type="date"
                 defaultValue={new Date().toISOString().slice(0, 10)}
                 {...register("date", { required: true })}
-                className={`w-full px-3 py-2 rounded-lg border ${
+                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring ${
                   isDark
-                    ? "bg-slate-800 border-slate-700 text-slate-100"
+                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
                     : "bg-white border-gray-200 text-gray-800"
                 }`}
               />
             </div>
 
             {/* Buttons */}
-            <div className="lg:col-span-3 flex justify-end gap-3">
+            <div className="lg:col-span-3 flex flex-col sm:flex-row sm:justify-end gap-3">
               <button
                 type="submit"
-                className="px-4 py-2 rounded-lg accent-bg hover:opacity-90"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg accent-bg hover:opacity-90"
               >
                 {t("addSaleBtn")}
               </button>
@@ -341,9 +339,11 @@ const SaleList = () => {
                 type="button"
                 onClick={confirmVoucher}
                 disabled={records.length === 0}
-                className={`px-4 py-2 rounded-lg text-white ${
+                className={`w-full sm:w-auto px-4 py-2  rounded-lg text-white ${
                   records.length === 0
-                    ? "bg-gray-400"
+                    ? isDark
+                      ? "bg-[#3F3F46] text-[#A1A1AA]"
+                      : "bg-gray-400"
                     : "accent-bg hover:opacity-90"
                 }`}
               >
@@ -355,7 +355,6 @@ const SaleList = () => {
 
         <VoucherList />
       </section>
-    </Container>
   );
 };
 

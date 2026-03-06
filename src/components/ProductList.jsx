@@ -45,12 +45,12 @@ const ProductList = () => {
     <div className="w-full">
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <label className="relative block">
             <input
-              className={`placeholder:italic placeholder:text-sm border rounded-md py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 accent-ring ${
+              className={`w-full sm:w-64 placeholder:italic placeholder:text-sm border rounded-md py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 accent-ring ${
                 isDark
-                  ? "bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-400"
+                  ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5] placeholder:text-[#71717A]"
                   : "bg-white border-gray-200 text-gray-800 placeholder:text-gray-400"
               }`}
               placeholder={t("searchProducts")}
@@ -60,7 +60,7 @@ const ProductList = () => {
             />
             <span
               className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs ${
-                isDark ? "text-slate-400" : "text-gray-400"
+                isDark ? "text-[#71717A]" : "text-gray-400"
               }`}
             >
               x
@@ -83,39 +83,39 @@ const ProductList = () => {
         <>
           <div
             className={`relative overflow-x-auto rounded-lg border shadow-sm ${
-              isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-white"
+              isDark ? "border-[#2E2E33] bg-[#1E1F23]" : "border-gray-200 bg-white"
             }`}
           >
             <table
-              className={`w-full text-sm text-left table-fixed ${
-                isDark ? "text-slate-200" : "text-gray-700"
+              className={`w-full min-w-[640px] text-sm text-left table-auto ${
+                isDark ? "text-[#F5F5F5]" : "text-gray-700"
               }`}
             >
               <thead
                 className={`text-xs uppercase tracking-wide ${
-                  isDark ? "bg-slate-800 text-slate-400" : "bg-gray-50 text-gray-500"
+                  isDark ? "bg-[#24262C] text-[#A1A1AA]" : "bg-gray-50 text-gray-500"
                 }`}
               >
                 <tr>
-                  <th scope="col" className="w-12 px-4 py-3">
+                  <th scope="col" className="w-12 px-3 sm:px-4 py-3">
                     #
                   </th>
-                  <th scope="col" className="px-4 py-3 text-left">
+                  <th scope="col" className="px-3 sm:px-4 py-3 text-left">
                     {t("productLabel")}
                   </th>
-                  <th scope="col" className="w-28 px-4 py-3 text-right">
+                  <th scope="col" className="w-28 px-3 sm:px-4 py-3 text-right">
                     {t("priceLabel")}
                   </th>
-                  <th scope="col" className="w-28 px-4 py-3 text-right">
+                  <th scope="col" className="w-28 px-3 sm:px-4 py-3 text-right">
                     {t("createDate")}
                   </th>
-                  <th scope="col" className="w-48 px-4 py-3 text-right">
+                  <th scope="col" className="w-48 px-3 sm:px-4 py-3 text-right">
                     {t("actions")}
                   </th>
                 </tr>
               </thead>
 
-              <tbody className={`${isDark ? "divide-slate-800" : "divide-gray-100"} divide-y`}>
+              <tbody className={`${isDark ? "divide-[#2E2E33]" : "divide-gray-100"} divide-y`}>
                 {Array.isArray(paginatedData) && paginatedData.length > 0 ? (
                   paginatedData.map((product) => (
                     <ProductDataList key={product.id} product={product} />
@@ -124,8 +124,8 @@ const ProductList = () => {
                   <tr>
                     <td
                       colSpan={6}
-                      className={`px-4 py-6 text-center text-sm ${
-                        isDark ? "text-slate-400" : "text-gray-500"
+                      className={`px-3 sm:px-4 py-6 text-center text-sm ${
+                        isDark ? "text-[#A1A1AA]" : "text-gray-500"
                       }`}
                     >
                       {t("noProductsFound")}
@@ -143,7 +143,7 @@ const ProductList = () => {
                 disabled={page === 1}
                 className={`px-3 py-1 rounded-full disabled:opacity-50 transition ${
                   isDark
-                    ? "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                    ? "bg-[#2A2D34] text-[#F5F5F5] hover:bg-[#32353D]"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
@@ -156,22 +156,22 @@ const ProductList = () => {
                   onClick={() => handlePageChange(p)}
                   className={`px-3 py-1 rounded-full transition ${
                     p === page
-                      ? "accent-bg"
-                      : isDark
-                      ? "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+                    ? "accent-bg"
+                    : isDark
+                    ? "bg-[#2A2D34] text-[#F5F5F5] hover:bg-[#32353D]"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
 
               <button
                 onClick={() => handlePageChange(page + 1)}
                 disabled={page === totalPages}
                 className={`px-3 py-1 rounded-full disabled:opacity-50 transition ${
                   isDark
-                    ? "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                    ? "bg-[#2A2D34] text-[#F5F5F5] hover:bg-[#32353D]"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >

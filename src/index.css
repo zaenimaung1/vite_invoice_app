@@ -1,7 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --accent-color: #4f46e5;
+  --accent-color: #A3E635;
+  --accent-gradient: linear-gradient(135deg, #A3E635, #65A30D);
+  --dark-bg: #1E1F23;
+  --dark-card: #2A2D34;
+  --dark-sidebar: #24262C;
+  --dark-hover: #32353D;
+  --dark-text: #F5F5F5;
+  --dark-text-secondary: #A1A1AA;
+  --dark-text-muted: #71717A;
+  --dark-border-subtle: #3F3F46;
+  --dark-border-card: #2E2E33;
+  --dark-glow: radial-gradient(circle, #6EE7B7 0%, #1E1F23 70%);
+  --chart-line: #22C55E;
+  --chart-fill: #4ADE80;
+  --chart-muted: #86EFAC;
+}
+
+.app-glow {
+  background: var(--dark-glow);
 }
 
 .accent-text {
@@ -9,7 +27,7 @@
 }
 
 .accent-bg {
-  background-color: var(--accent-color);
+  background: var(--accent-gradient, var(--accent-color));
   color: #fff;
 }
 

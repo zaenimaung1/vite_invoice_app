@@ -11,18 +11,18 @@ const Header = () => {
   const phoneLine = settings.phoneNumber?.trim();
 
   return (
-    <header className={`${isDark ? "bg-slate-900" : "bg-white"} shadow`}>
+    <header className={`${isDark ? "bg-[#24262C]" : "bg-white"} shadow`}>
       <Container className="py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1
               className={`text-lg font-semibold ${
-                isDark ? "text-slate-100" : "text-gray-800"
+                isDark ? "text-[#F5F5F5]" : "text-gray-800"
               } accent-text`}
             >
               {settings.shopName || "Voucher App"}
             </h1>
-            <div className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+            <div className={`text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>
               {addressLine && <div>{addressLine}</div>}
               {phoneLine && <div>{phoneLine}</div>}
               {!addressLine && !phoneLine && <div>{t("manageSettings")}</div>}
@@ -31,9 +31,7 @@ const Header = () => {
 
           <Link
             to="/settings"
-            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold shadow-sm transition ${
-              isDark ? "text-slate-100" : "text-white"
-            } accent-bg hover:opacity-90`}
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold shadow-sm transition text-white accent-bg hover:opacity-90"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

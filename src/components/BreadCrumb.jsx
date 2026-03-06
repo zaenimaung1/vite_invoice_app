@@ -2,15 +2,18 @@ import { Link } from "react-router";
 import { useSettings } from "../context/SettingsContext.jsx";
 
 const BreadCrumb = ({ currentPageTitle, link }) => {
-  const { t } = useSettings();
+  const { t, settings } = useSettings();
+  const isDark = settings.theme === "dark";
   return (
-    <div className="w-full flex gap-3 mb-5">
+    <div className="w-full flex flex-wrap gap-3 mb-5">
       <nav className="flex" aria-label="Breadcrumb">
-        <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
+        <ol className="flex flex-wrap items-center gap-1 sm:gap-2 rtl:space-x-reverse">
           <li className="inline-flex items-center">
             <Link
               to="/"
-              className="inline-flex items-center text-sm font-medium text-body hover:text-fg-brand"
+              className={`inline-flex items-center text-sm font-medium ${
+                isDark ? "text-[#A1A1AA] hover:text-[#A3E635]" : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               <svg
                 className="w-4 h-4 me-1.5"
@@ -38,10 +41,12 @@ const BreadCrumb = ({ currentPageTitle, link }) => {
               <li key={index} className="inline-flex items-center">
                 <Link
                   to={item.path}
-                  className="inline-flex items-center text-sm font-medium text-body hover:text-fg-brand"
+                  className={`inline-flex items-center text-sm font-medium ${
+                    isDark ? "text-[#A1A1AA] hover:text-[#A3E635]" : "text-gray-600 hover:text-gray-900"
+                  }`}
                 >
                   <svg
-                className="w-3.5 h-3.5 rtl:rotate-180 text-body"
+                className={`w-3.5 h-3.5 rtl:rotate-180 ${isDark ? "text-[#71717A]" : "text-gray-400"}`}
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 width={24}
@@ -66,7 +71,7 @@ const BreadCrumb = ({ currentPageTitle, link }) => {
           <li aria-current="page">
             <div className="flex items-center space-x-1.5">
               <svg
-                className="w-3.5 h-3.5 rtl:rotate-180 text-body"
+                className={`w-3.5 h-3.5 rtl:rotate-180 ${isDark ? "text-[#71717A]" : "text-gray-400"}`}
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 width={24}
@@ -82,7 +87,9 @@ const BreadCrumb = ({ currentPageTitle, link }) => {
                   d="m9 5 7 7-7 7"
                 />
               </svg>
-              <span className="inline-flex text-gray-500 items-center text-sm font-medium text-body-subtle">
+              <span className={`inline-flex max-w-[200px] truncate items-center text-sm font-medium sm:max-w-none ${
+                isDark ? "text-[#A1A1AA]" : "text-gray-500"
+              }`}>
                 {currentPageTitle}
               </span>
             </div>

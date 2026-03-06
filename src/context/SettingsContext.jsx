@@ -5,8 +5,8 @@ const DEFAULT_SETTINGS = {
   address: "",
   phoneNumber: "",
   taxPercent: 8,
-  theme: "light",
-  accentColor: "#4f46e5",
+  theme: "dark",
+  accentColor: "#A3E635",
   language: "en",
 };
 
@@ -108,21 +108,21 @@ const TRANSLATIONS = {
     todayRevenue: "ယနေ့ ရရှိငွေ",
     monthlyRevenue: "လစဉ် ရရှိငွေ",
     todayProductShare: "ယနေ့ ကုန်ပစ္စည်းရောင်းချမှု အချိုးအစား",
-    todayProductShareDesc: "ယနေ့ ဗောက်ချာများပေါ် အခြေခံထားသည်",
+    todayProductShareDesc: "ယနေ့  ဘောင်ချာများပေါ် အခြေခံထားသည်",
     chartType: "ပြဇယား အမျိုးအစား",
     noSalesToday: "ယနေ့အတွက် အရောင်းမှတ်တမ်း မရှိသေးပါ။",
-    voucher: "ဗောက်ချာ",
+    voucher: "ဘောင်ချာ",
     sale: "အရောင်း",
     product: "ကုန်ပစ္စည်း",
     addSale: "အရောင်းမှတ်တမ်းအသစ်",
-    voucherId: "ဗောက်ချာ နံပါတ်",
+    voucherId: "ဘောင်ချာ နံပါတ်",
     customerName: "ဝယ်ယူသူ အမည်",
     phoneNumberLabel: "ဖုန်းနံပါတ်",
     productLabel: "ကုန်ပစ္စည်း",
     quantityLabel: "အရေအတွက်",
     dateLabel: "ရက်စွဲ",
     addSaleBtn: "စာရင်းသွင်းရန်",
-    confirmVoucher: "ဗောက်ချာ အတည်ပြုရန်",
+    confirmVoucher: "ဘောင်ချာ အတည်ပြုရန်",
     noData: "အချက်အလက် မရှိပါ",
     fullPrice: "ဈေးနှုန်း",
     actions: "ဆောင်ရွက်ချက်များ",
@@ -147,7 +147,7 @@ const TRANSLATIONS = {
     manageSettings: "စနစ်ဆိုင်ရာ သတ်မှတ်ချက်များကို ပြင်ဆင်ရန်",
     home: "မူလစာမျက်နှာ",
     productPageTitle: "ကုန်ပစ္စည်း စာမျက်နှာ",
-    voucherModule: "ဗော်ချာ မိုဂျူး",
+    voucherModule: "ဘောင်ချာ ကဏ္ဍ",
     searchProducts: "ကုန်ပစ္စည်း ရှာရန်...",
     addProduct: "ကုန်ပစ္စည်း ထည့်ရန်",
     priceLabel: "ဈေးနှုန်း",
@@ -155,22 +155,22 @@ const TRANSLATIONS = {
     noProductsFound: "ကုန်ပစ္စည်း မတွေ့ပါ။",
     prev: "နောက်သို့",
     next: "ရှေ့သို့",
-    searchVouchers: "ဗော်ချာ ID သို့မဟုတ် ဝယ်သူ အမည်ဖြင့် ရှာရန်...",
+    searchVouchers: "ဘောင်ချာ ID သို့မဟုတ် ဝယ်သူ အမည်ဖြင့် ရှာရန်...",
     exportThisMonth: "ယခုလ ထုတ်ယူရန် (Excel)",
-    importVouchers: "ဗော်ချာများ တင်သွင်းရန်",
-    voucherIdLabel: "ဗော်ချာ ID",
+    importVouchers: "ဘောင်ချာများ တင်သွင်းရန်",
+    voucherIdLabel: "ဘောင်ချာ ID",
     customerNameLabel: "ဝယ်သူ အမည်",
     productNameLabel: "ကုန်ပစ္စည်း အမည်",
     totalPriceLabel: "စုစုပေါင်း ဈေးနှုန်း",
     dateLabelTable: "ရက်စွဲ",
     actionLabel: "လုပ်ဆောင်ချက်",
     loading: "တင်နေသည်...",
-    noVoucher: "ပြသရန် ဗော်ချာ မရှိပါ။",
-    noVouchersFound: "ဗော်ချာ မတွေ့ပါ။",
+    noVoucher: "ပြသရန် ဘောင်ချာ မရှိပါ။",
+    noVouchersFound: "ဘောင်ချာ မတွေ့ပါ။",
     details: "အသေးစိတ်",
     delete: "ဖျက်ရန်",
     deleting: "ဖျက်နေသည်...",
-    voucherDetails: "ဗော်ချာ အသေးစိတ်",
+    voucherDetails: "ဘောင်ချာ အသေးစိတ်",
     print: "ပရင့်ထုတ်ရန်",
     close: "ပိတ်ရန်",
     lineTotal: "လိုင်းစုစုပေါင်း",
@@ -203,9 +203,11 @@ export const SettingsProvider = ({ children }) => {
     if (typeof document === "undefined") return;
     document.documentElement.dataset.theme = settings.theme || "light";
     document.documentElement.lang = settings.language === "my" ? "my" : "en";
+    const accent = settings.accentColor || DEFAULT_SETTINGS.accentColor;
+    document.documentElement.style.setProperty("--accent-color", accent);
     document.documentElement.style.setProperty(
-      "--accent-color",
-      settings.accentColor || DEFAULT_SETTINGS.accentColor
+      "--accent-gradient",
+      `linear-gradient(135deg, ${accent}, #65A30D)`
     );
   }, [settings.theme, settings.accentColor, settings.language]);
 

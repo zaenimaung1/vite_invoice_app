@@ -17,16 +17,16 @@ const SettingsPage = () => {
   };
 
   const cardClass = `rounded-2xl border shadow-sm p-5 ${
-    isDark ? "border-slate-700 bg-slate-800" : "border-gray-200 bg-white"
+    isDark ? "border-[#2E2E33] bg-[#2A2D34]" : "border-gray-200 bg-white"
   }`;
 
   const labelClass = `block text-xs font-semibold uppercase tracking-wide ${
-    isDark ? "text-slate-400" : "text-gray-500"
+    isDark ? "text-[#A1A1AA]" : "text-gray-500"
   }`;
 
   const inputClass = `mt-1 w-full rounded-lg border px-3 py-2 text-sm accent-ring ${
     isDark
-      ? "border-slate-600 bg-slate-900 text-slate-100"
+      ? "border-[#3F3F46] bg-[#1E1F23] text-[#F5F5F5]"
       : "border-gray-200 bg-white text-gray-700"
   }`;
 
@@ -36,7 +36,7 @@ const SettingsPage = () => {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold accent-text">{t("settings")}</h1>
-            <p className={isDark ? "text-slate-300" : "text-gray-500"}>
+            <p className={isDark ? "text-[#A1A1AA]" : "text-gray-500"}>
               {t("settingsSubtitle")}
             </p>
           </div>
@@ -44,7 +44,7 @@ const SettingsPage = () => {
             to="/"
             className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm transition ${
               isDark
-                ? "border-slate-700 text-slate-100 hover:bg-slate-800"
+                ? "border-[#2E2E33] text-[#F5F5F5] hover:bg-[#32353D]"
                 : "border-gray-200 text-gray-700 hover:bg-gray-50"
             }`}
           >
@@ -58,7 +58,7 @@ const SettingsPage = () => {
               <h2 className="text-lg font-semibold">
                 {t("storeDetails")}
               </h2>
-              <span className="text-xs text-gray-400">01</span>
+              <span className={`text-xs ${isDark ? "text-[#71717A]" : "text-gray-400"}`}>01</span>
             </div>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               <div>
@@ -94,7 +94,7 @@ const SettingsPage = () => {
           <section className={cardClass}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">{t("finance")}</h2>
-              <span className="text-xs text-gray-400">02</span>
+              <span className={`text-xs ${isDark ? "text-[#71717A]" : "text-gray-400"}`}>02</span>
             </div>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               <div>
@@ -126,7 +126,7 @@ const SettingsPage = () => {
           <section className={cardClass}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">{t("appearance")}</h2>
-              <span className="text-xs text-gray-400">03</span>
+              <span className={`text-xs ${isDark ? "text-[#71717A]" : "text-gray-400"}`}>03</span>
             </div>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3 items-end">
               <div>
@@ -147,16 +147,16 @@ const SettingsPage = () => {
                   value={settings.accentColor}
                   onChange={updateField("accentColor")}
                   className={`mt-1 h-10 w-full rounded-lg border p-1 ${
-                    isDark ? "border-slate-600 bg-slate-900" : "border-gray-200 bg-white"
+                    isDark ? "border-[#3F3F46] bg-[#1E1F23]" : "border-gray-200 bg-white"
                   }`}
                 />
               </div>
               <div
                 className={`rounded-xl border p-3 ${
-                  isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-gray-50"
+                  isDark ? "border-[#2E2E33] bg-[#1E1F23]" : "border-gray-200 bg-gray-50"
                 }`}
               >
-                <div className="text-xs uppercase tracking-wide text-gray-400">
+                <div className={`text-xs uppercase tracking-wide ${isDark ? "text-[#71717A]" : "text-gray-400"}`}>
                   {t("preview")}
                 </div>
                 <div className="mt-2 flex items-center gap-2">

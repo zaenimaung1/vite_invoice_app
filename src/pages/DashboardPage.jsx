@@ -5,7 +5,8 @@ import Container from "../components/Container";
 import { useSettings } from "../context/SettingsContext.jsx";
 
 const DashboardPage = () => {
-  const { formatCurrency, t } = useSettings();
+  const { formatCurrency, t, settings } = useSettings();
+  const isDark = settings.theme === "dark";
   // Fetch products and vouchers
   const { data: products } = useSWR(import.meta.env.VITE_API_URL + '/products', (url) => fetch(url).then(res => res.json()));
   const { data: vouchers } = useSWR(import.meta.env.VITE_API_URL + '/vouchers', (url) => fetch(url).then(res => res.json()));
@@ -58,7 +59,7 @@ const DashboardPage = () => {
 
   const [chartType, setChartType] = React.useState("donut");
 
-  const slicePalette = ["#4f46e5", "#22c55e", "#f97316", "#e11d48", "#0ea5e9", "#a855f7"];
+  const slicePalette = ["#A3E635", "#84CC16", "#22C55E", "#4ADE80", "#65A30D", "#B6F542"];
 
   const pieGradient = React.useMemo(() => {
     if (!todayProductSlices.length) return "";
@@ -86,27 +87,27 @@ const DashboardPage = () => {
     <Container>
       <div className="w-full">
         {/* Header */}
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">{t("dashboard")}</h1>
-        <p className="text-gray-500 mb-6">
+        <h1 className={`text-3xl font-bold mb-2 ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>{t("dashboard")}</h1>
+        <p className={`${isDark ? "text-[#A1A1AA]" : "text-gray-500"} mb-6`}>
           {t("dashboardSubtitle")}
         </p>
 
         {/* Card Section */}
-        <div className="bg-white shadow-lg rounded-2xl p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">{t("modules")}</h2>
+        <div className={`shadow-lg rounded-2xl p-6 ${isDark ? "bg-[#2A2D34] border border-[#2E2E33]" : "bg-white"}`}>
+          <h2 className={`text-xl font-semibold mb-4 ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>{t("modules")}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ModuleBtn
               name={t("voucher")}
               icon={
-                <div className="bg-blue-100 p-4 rounded-full">
+                <div className={`p-4 rounded-full ${isDark ? "bg-[#24262C]" : "bg-blue-100"}`}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
+                    fill="none" 
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
-                    className="size-10 text-blue-600"
+                    className={`size-10 ${isDark ? "text-[#A3E635]" : "text-blue-600"}`}
                   >
                     <path
                       strokeLinecap="round"
@@ -122,14 +123,14 @@ const DashboardPage = () => {
             <ModuleBtn
               name={t("sale")}
               icon={
-                <div className="bg-green-100 p-4 rounded-full">
+                <div className={`p-4 rounded-full ${isDark ? "bg-[#24262C]" : "bg-green-100"}`}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
-                    className="size-10 text-green-600"
+                    className={`size-10 ${isDark ? "text-[#22C55E]" : "text-green-600"}`}
                   >
                     <path
                       strokeLinecap="round"
@@ -145,14 +146,14 @@ const DashboardPage = () => {
             <ModuleBtn
               name={t("product")}
               icon={
-                <div className="bg-purple-100 p-4 rounded-full">
+                <div className={`p-4 rounded-full ${isDark ? "bg-[#24262C]" : "bg-purple-100"}`}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
-                    className="size-10 text-purple-600"
+                    className={`size-10 ${isDark ? "text-[#84CC16]" : "text-purple-600"}`}
                   >
                     <path
                       strokeLinecap="round"
@@ -170,10 +171,12 @@ const DashboardPage = () => {
 
         {/* Today Overview Section */}
         <div className="mt-10">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-6">{t("overview")}</h2>
+          <h2 className={`text-2xl font-semibold mb-6 ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>{t("overview")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {/* Total Products */}
-            <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+            <div className={`flex items-center p-4 rounded-xl shadow hover:shadow-lg border transition ${
+              isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"
+            }`}>
               <div className="p-3 bg-blue-100 rounded-full text-blue-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -185,13 +188,15 @@ const DashboardPage = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-800">{productCount}</p>
-                <p className="text-gray-500 text-sm">{t("totalProducts")}</p>
+                <p className={`text-2xl font-bold ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>{productCount}</p>
+                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("totalProducts")}</p>
               </div>
             </div>
 
             {/* Today Sales */}
-            <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+            <div className={`flex items-center p-4 rounded-xl shadow hover:shadow-lg border transition ${
+              isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"
+            }`}>
               <div className="p-3 bg-green-100 rounded-full text-green-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -200,13 +205,15 @@ const DashboardPage = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-800">{todaySales}</p>
-                <p className="text-gray-500 text-sm">{t("todaySales")}</p>
+                <p className={`text-2xl font-bold ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>{todaySales}</p>
+                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("todaySales")}</p>
               </div>
             </div>
 
             {/* Today Revenue */}
-            <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+            <div className={`flex items-center p-4 rounded-xl shadow hover:shadow-lg border transition ${
+              isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"
+            }`}>
               <div className="p-3 bg-yellow-100 rounded-full text-yellow-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -216,16 +223,18 @@ const DashboardPage = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-2xl font-bold ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>
                   {formatCurrency(Math.round(todayRevenue))}
                 </p>
-                <p className="text-gray-500 text-sm">{t("todayRevenue")}</p>
+                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("todayRevenue")}</p>
               </div>
             </div>
 
 
             {/* Monthly Revenue */}
-            <div className="flex items-center p-4 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition">
+            <div className={`flex items-center p-4 rounded-xl shadow hover:shadow-lg border transition ${
+              isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"
+            }`}>
               <div className="p-3 bg-red-100 rounded-full text-red-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -234,10 +243,10 @@ const DashboardPage = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-2xl font-bold ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>
                   {formatCurrency(Math.round(monthlyRevenue))}
                 </p>
-                <p className="text-gray-500 text-sm">{t("monthlyRevenue")}</p>
+                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("monthlyRevenue")}</p>
               </div>
             </div>
           </div>
@@ -245,21 +254,25 @@ const DashboardPage = () => {
 
         {/* Charts */}
         <div className="mt-10">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div className={`rounded-2xl border shadow-sm p-5 ${isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"}`}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-700">{t("todayProductShare")}</h2>
-                <p className="text-gray-500 text-sm">{t("todayProductShareDesc")}</p>
+                <h2 className={`text-xl font-semibold ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>{t("todayProductShare")}</h2>
+                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("todayProductShareDesc")}</p>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-500" htmlFor="chartType">
+                <label className={`text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`} htmlFor="chartType">
                   {t("chartType")}
                 </label>
                 <select
                   id="chartType"
                   value={chartType}
                   onChange={(event) => setChartType(event.target.value)}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className={`rounded-lg border px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 accent-ring ${
+                    isDark
+                      ? "border-[#3F3F46] bg-[#1E1F23] text-[#F5F5F5]"
+                      : "border-gray-200 bg-white text-gray-700"
+                  }`}
                 >
                   {chartTypes.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -271,7 +284,7 @@ const DashboardPage = () => {
             </div>
 
             {todayProductSlices.length === 0 ? (
-              <div className="text-sm text-gray-500 italic mt-4">{t("noSalesToday")}</div>
+              <div className={`text-sm italic mt-4 ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("noSalesToday")}</div>
             ) : (
               <div className="mt-4 flex flex-col items-center gap-4">
                 {chartType === "bar" && (
@@ -280,11 +293,11 @@ const DashboardPage = () => {
                       const color = slicePalette[idx % slicePalette.length];
                       return (
                         <div key={slice.name} className="space-y-1">
-                          <div className="flex items-center justify-between text-xs text-gray-600">
+                          <div className={`flex items-center justify-between text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-600"}`}>
                             <span className="truncate max-w-[220px]">{slice.name}</span>
                             <span>{slice.percent.toFixed(1)}%</span>
                           </div>
-                          <div className="h-2 w-full rounded-full bg-gray-100">
+                          <div className={`h-2 w-full rounded-full ${isDark ? "bg-[#24262C]" : "bg-gray-100"}`}>
                             <div
                               className="h-2 rounded-full"
                               style={{ width: `${slice.percent}%`, backgroundColor: color }}
@@ -305,7 +318,7 @@ const DashboardPage = () => {
                       }}
                     />
                     {chartType === "donut" && (
-                      <div className="absolute inset-0 m-6 rounded-full bg-white shadow-inner" />
+                      <div className={`absolute inset-0 m-6 rounded-full shadow-inner ${isDark ? "bg-[#1E1F23]" : "bg-white"}`} />
                     )}
                   </div>
                 )}
@@ -329,7 +342,7 @@ const DashboardPage = () => {
                               key={scale}
                               points={points}
                               fill="none"
-                              stroke="#e5e7eb"
+                              stroke={isDark ? "#3F3F46" : "#e5e7eb"}
                               strokeWidth="1"
                             />
                           );
@@ -345,7 +358,7 @@ const DashboardPage = () => {
                               y1="0"
                               x2={x}
                               y2={y}
-                              stroke="#e5e7eb"
+                              stroke={isDark ? "#3F3F46" : "#e5e7eb"}
                               strokeWidth="1"
                             />
                           );
@@ -360,8 +373,8 @@ const DashboardPage = () => {
                               return `${x},${y}`;
                             })
                             .join(" ")}
-                          fill="rgba(79, 70, 229, 0.25)"
-                          stroke="#4f46e5"
+                          fill="rgba(34, 197, 94, 0.25)"
+                          stroke="#22C55E"
                           strokeWidth="2"
                         />
                       </g>
@@ -379,11 +392,11 @@ const DashboardPage = () => {
                             className="inline-block h-2 w-2 rounded-full"
                             style={{ backgroundColor: color }}
                           />
-                          <span className="text-gray-700 truncate max-w-[160px]">
+                          <span className={`truncate max-w-[160px] ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>
                             {slice.name}
                           </span>
                         </div>
-                        <div className="text-gray-500">
+                        <div className={`${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>
                           {slice.percent.toFixed(1)}%
                         </div>
                       </div>

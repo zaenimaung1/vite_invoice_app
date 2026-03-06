@@ -8,11 +8,12 @@ import React from 'react'
  * - fluid: if true the container stretches to full width (keeps horizontal padding)
  * - as: element type to render (default: div)
  */
-const Container = ({ children, className }) => {
+const Container = ({ children, className = "", as: Component = "div", fluid = false }) => {
+  const widthClass = fluid ? "w-full" : "w-full max-w-6xl";
   return (
-    <div className={`w-full md:w-[720px]  lg:w-[1000px] mx-auto ${className}`}>
+    <Component className={`${widthClass} px-4 sm:px-6 lg:px-8 mx-auto ${className}`.trim()}>
       {children}
-    </div>
+    </Component>
   );
 };
 

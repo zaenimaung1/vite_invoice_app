@@ -1,6 +1,5 @@
-import React, { useRef, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import useSWR, { useSWRConfig } from "swr";
-import * as XLSX from "xlsx";
 import toast, { Toaster } from "react-hot-toast";
 import { useSettings } from "../context/SettingsContext.jsx";
 
@@ -15,10 +14,12 @@ const VoucherDetail = () => {
   const { mutate } = useSWRConfig();
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [search, setSearch] = useState("");
+  const [filterMonth, setFilterMonth] = useState(
+    () => new Date().toISOString().slice(0, 7)
+  );
   const [filterDate, setFilterDate] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const fileInputRef = useRef(null);
 
   const formatMMK = (v) => formatCurrency(v);
   const escapeHtml = (value) =>
@@ -141,6 +142,11 @@ const VoucherDetail = () => {
       const matchesText = name.includes(term) || vid.includes(term);
       if (!matchesText) return false;
     }
+    if (filterMonth) {
+      if (!v.date) return false;
+      const d = String(v.date).slice(0, 7);
+      if (d !== filterMonth) return false;
+    }
     if (filterDate) {
       if (!v.date) return false;
       const d = String(v.date).slice(0, 10);
@@ -156,85 +162,80 @@ const VoucherDetail = () => {
 
   const totalPages = Math.max(1, Math.ceil(filteredVouchers.length / pageSize));
   const handlePageChange = (newPage) => { if (newPage < 1 || newPage > totalPages) return; setPage(newPage); };
+  const monthTotal = useMemo(() => {
+    if (!filterMonth) return 0;
+    return (data || []).reduce((sum, v) => {
+      if (!v?.date) return sum;
+      return String(v.date).slice(0, 7) === filterMonth
+        ? sum + (Number(v.grandTotal) || 0)
+        : sum;
+    }, 0);
+  }, [filterMonth, data]);
 
-  const exportThisMonth = () => {
-    if (!filteredVouchers || filteredVouchers.length === 0) return;
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    const rows = filteredVouchers
-      .filter((v) => v.date && new Date(v.date).getFullYear() === currentYear && new Date(v.date).getMonth() === currentMonth)
-      .map((v) => ({
-        id: v.id,
-        voucherId: v.voucherId || v.id,
-        username: v.username || "",
-        phoneNumber: v.phoneNumber || v.email || "",
-        date: v.date,
-        subTotal: v.subTotal || 0,
-        tax: v.tax || 0,
-        grandTotal: v.grandTotal || 0,
-        items: JSON.stringify(v.items || []),
-      }));
-    if (rows.length === 0) { toast("No vouchers for this month to export."); return; }
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "vouchers");
-    const monthLabel = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
-    XLSX.writeFile(wb, `vouchers-${monthLabel}.xlsx`);
-  };
-
-  const handleImportClick = () => fileInputRef.current?.click();
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const bstr = evt.target.result;
-      const wb = XLSX.read(bstr, { type: "binary" });
-      const sheetName = wb.SheetNames[0];
-      const ws = wb.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(ws);
-      for (const row of rows) {
-        const voucher = {
-          id: row.id || Date.now(),
-          username: row.username || "",
-          phoneNumber: row.phoneNumber || row.email || "",
-          voucherId: row.voucherId || `V-${Date.now()}`,
-          date: row.date || new Date().toISOString(),
-          items: row.items ? JSON.parse(row.items) : [],
-          subTotal: Number(row.subTotal) || 0,
-          tax: Number(row.tax) || 0,
-          grandTotal: Number(row.grandTotal) || 0,
-        };
-        await fetch(vouchersUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(voucher) });
-      }
-      mutate(vouchersUrl);
-      toast.success("Import completed.");
-    };
-    reader.readAsBinaryString(file);
-    e.target.value = null;
-  };
+  const todayTotal = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return (data || []).reduce((sum, v) => {
+      if (!v?.date) return sum;
+      return String(v.date).slice(0, 10) === today
+        ? sum + (Number(v.grandTotal) || 0)
+        : sum;
+    }, 0);
+  }, [data]);
 
   return (
     <div className={`relative overflow-hidden shadow-md rounded-lg border ${isDark ? "bg-[#1E1F23] border-[#2E2E33]" : "bg-white border-gray-200"}`}>
       <Toaster />
-      <input ref={fileInputRef} onChange={handleFile} type="file" accept=".xlsx,.xls,.csv" className="hidden" />
 
       {/* Filter & Buttons */}
       <div className={`p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b rounded-t-lg ${isDark ? "bg-[#24262C] border-[#2E2E33]" : "bg-gray-50 border-gray-200"}`}>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 max-w-xl w-full">
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchVouchers")} className={`w-full px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring ${isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5] placeholder:text-[#71717A]" : "bg-white border-gray-300 text-gray-800 placeholder:text-gray-400"}`} />
-          <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className={`w-full sm:w-auto px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring ${isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5]" : "bg-white border-gray-300 text-gray-800"}`} />
+          <input
+            type="month"
+            value={filterMonth}
+            onChange={(e) => {
+              const month = e.target.value;
+              setFilterMonth(month);
+              if (filterDate && month && !filterDate.startsWith(month)) {
+                setFilterDate("");
+              }
+            }}
+            className={`w-full sm:w-auto px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring ${isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5]" : "bg-white border-gray-300 text-gray-800"}`}
+          />
+          <input
+            type="date"
+            value={filterDate}
+            min={filterMonth ? `${filterMonth}-01` : undefined}
+            max={
+              filterMonth
+                ? `${filterMonth}-${String(
+                    new Date(
+                      Number(filterMonth.slice(0, 4)),
+                      Number(filterMonth.slice(5, 7)),
+                      0
+                    ).getDate()
+                  ).padStart(2, "0")}`
+                : undefined
+            }
+            onChange={(e) => {
+              const date = e.target.value;
+              setFilterDate(date);
+              if (date && !filterMonth) {
+                setFilterMonth(date.slice(0, 7));
+              } else if (date && filterMonth && !date.startsWith(filterMonth)) {
+                setFilterMonth(date.slice(0, 7));
+              }
+            }}
+            className={`w-full sm:w-auto px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring ${isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5]" : "bg-white border-gray-300 text-gray-800"}`}
+          />
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
-          <button onClick={exportThisMonth} className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium uppercase tracking-wide bg-[#22C55E] text-white rounded-md shadow-sm hover:bg-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-[color:rgba(34,197,94,0.35)]">
-            <span className="inline-block h-2 w-2 rounded-full bg-white/70" />
-            <span>{t("exportThisMonth")}</span>
-          </button>
-          <button onClick={handleImportClick} className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium uppercase tracking-wide accent-bg rounded-md shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 accent-ring">
-            <span className="inline-block h-2 w-2 rounded-full bg-white/70" />
-            <span>{t("importVouchers")}</span>
-          </button>
+          <div className={`px-3 py-2 text-xs font-semibold rounded-md border ${isDark ? "border-[#3F3F46] text-[#F5F5F5] bg-[#1E1F23]" : "border-gray-200 text-gray-700 bg-white"}`}>
+            {t("monthlyRevenue")}: <span className="accent-text">{formatMMK(monthTotal)}</span>
+          </div>
+          <div className={`px-3 py-2 text-xs font-semibold rounded-md border ${isDark ? "border-[#3F3F46] text-[#F5F5F5] bg-[#1E1F23]" : "border-gray-200 text-gray-700 bg-white"}`}>
+            {t("todayRevenue")}: <span className="accent-text">{formatMMK(todayTotal)}</span>
+          </div>
         </div>
       </div>
 
@@ -274,8 +275,8 @@ const VoucherDetail = () => {
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">{new Date(voucher.date).toLocaleString()}</td>
                 <td className="px-3 sm:px-6 py-4 text-right">
                   <div className="inline-flex flex-wrap items-center gap-2 justify-end">
-                    <button onClick={() => setSelectedVoucher(voucher)} className={`px-3 py-1 text-xs rounded-full ${isDark ? "text-[#F5F5F5] bg-[#32353D] hover:bg-[#3F3F46]" : "text-[#1E1F23] bg-[#A3E635] hover:bg-[#B6F542]"}`}>{t("details")}</button>
-                    <button onClick={() => handleDelete(voucher.id)} disabled={deletingId === String(voucher.id)} aria-label="Delete voucher" className={`px-3 py-1 text-xs rounded-full disabled:opacity-50 ${isDark ? "text-red-200 bg-red-900/50 hover:bg-red-900" : "text-red-700 bg-red-50 hover:bg-red-100"}`}>{deletingId === String(voucher.id) ? t("deleting") : t("delete")}</button>
+                    <button onClick={() => setSelectedVoucher(voucher)} className={`px-3 py-1 text-xs rounded-full transition-transform active:scale-95 ${isDark ? "text-[#F5F5F5] bg-[#32353D] hover:bg-[#3F3F46]" : "text-[#1E1F23] bg-[#A3E635] hover:bg-[#B6F542]"}`}>{t("details")}</button>
+                    <button onClick={() => handleDelete(voucher.id)} disabled={deletingId === String(voucher.id)} aria-label="Delete voucher" className={`px-3 py-1 text-xs rounded-full disabled:opacity-50 transition-transform active:scale-95 ${isDark ? "text-red-200 bg-red-900/50 hover:bg-red-900" : "text-red-700 bg-red-50 hover:bg-red-100"}`}>{deletingId === String(voucher.id) ? t("deleting") : t("delete")}</button>
                   </div>
                 </td>
               </tr>
@@ -308,8 +309,8 @@ const VoucherDetail = () => {
             <div className="flex items-start justify-between mb-4">
               <h3 className="text-lg font-semibold">{t("voucherDetails")}</h3>
               <div className="inline-flex flex-wrap items-center gap-3">
-                <button onClick={() => handlePrint(selectedVoucher)} className="px-3 py-1 text-sm bg-[#22C55E] text-white rounded hover:bg-[#4ADE80]">{t("print")}</button>
-                <button onClick={() => setSelectedVoucher(null)} className={`text-sm px-3 py-1 rounded ${isDark ? "bg-[#32353D] text-[#F5F5F5]" : "bg-black text-white"}`}>{t("close")}</button>
+                <button onClick={() => handlePrint(selectedVoucher)} className="px-3 py-1 text-sm bg-[#22C55E] text-white rounded hover:bg-[#4ADE80] transition-transform active:scale-95">{t("print")}</button>
+                <button onClick={() => setSelectedVoucher(null)} className={`text-sm px-3 py-1 rounded transition-transform active:scale-95 ${isDark ? "bg-[#32353D] text-[#F5F5F5]" : "bg-black text-white"}`}>{t("close")}</button>
               </div>
             </div>
 

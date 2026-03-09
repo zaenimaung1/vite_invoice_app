@@ -2,18 +2,27 @@ import React from "react";
 import { Link } from "react-router-dom";
 import Container from "../components/Container";
 import { useSettings } from "../context/SettingsContext.jsx";
+import toast from "react-hot-toast";
 
 const SettingsPage = () => {
   const { settings, updateSettings, t } = useSettings();
   const isDark = settings.theme === "dark";
+  const [draft, setDraft] = React.useState(settings);
+
+  React.useEffect(() => {
+    setDraft(settings);
+  }, [settings]);
 
   const updateField = (key) => (event) => {
-    updateSettings({ [key]: event.target.value });
+    setDraft((prev) => ({ ...prev, [key]: event.target.value }));
   };
 
   const updateTax = (event) => {
     const next = Number(event.target.value);
-    updateSettings({ taxPercent: Number.isFinite(next) ? next : 0 });
+    setDraft((prev) => ({
+      ...prev,
+      taxPercent: Number.isFinite(next) ? next : 0,
+    }));
   };
 
   const cardClass = `rounded-2xl border shadow-sm p-5 ${
@@ -29,6 +38,11 @@ const SettingsPage = () => {
       ? "border-[#3F3F46] bg-[#1E1F23] text-[#F5F5F5]"
       : "border-gray-200 bg-white text-gray-700"
   }`;
+
+  const handleConfirm = () => {
+    updateSettings(draft);
+    toast.success("Settings saved.");
+  };
 
   return (
     <Container>
@@ -65,7 +79,7 @@ const SettingsPage = () => {
                 <label className={labelClass}>{t("shopName")}</label>
                 <input
                   type="text"
-                  value={settings.shopName}
+                  value={draft.shopName}
                   onChange={updateField("shopName")}
                   className={inputClass}
                 />
@@ -74,7 +88,7 @@ const SettingsPage = () => {
                 <label className={labelClass}>{t("phoneNumber")}</label>
                 <input
                   type="tel"
-                  value={settings.phoneNumber}
+                  value={draft.phoneNumber}
                   onChange={updateField("phoneNumber")}
                   className={inputClass}
                 />
@@ -83,7 +97,7 @@ const SettingsPage = () => {
                 <label className={labelClass}>{t("address")}</label>
                 <input
                   type="text"
-                  value={settings.address}
+                  value={draft.address}
                   onChange={updateField("address")}
                   className={inputClass}
                 />
@@ -104,7 +118,7 @@ const SettingsPage = () => {
                   min="0"
                   max="100"
                   step="0.1"
-                  value={settings.taxPercent}
+                  value={draft.taxPercent}
                   onChange={updateTax}
                   className={inputClass}
                 />
@@ -112,7 +126,7 @@ const SettingsPage = () => {
               <div>
                 <label className={labelClass}>{t("language")}</label>
                 <select
-                  value={settings.language}
+                  value={draft.language}
                   onChange={updateField("language")}
                   className={inputClass}
                 >
@@ -132,7 +146,7 @@ const SettingsPage = () => {
               <div>
                 <label className={labelClass}>{t("theme")}</label>
                 <select
-                  value={settings.theme}
+                  value={draft.theme}
                   onChange={updateField("theme")}
                   className={inputClass}
                 >
@@ -144,7 +158,7 @@ const SettingsPage = () => {
                 <label className={labelClass}>{t("accentColor")}</label>
                 <input
                   type="color"
-                  value={settings.accentColor}
+                  value={draft.accentColor}
                   onChange={updateField("accentColor")}
                   className={`mt-1 h-10 w-full rounded-lg border p-1 ${
                     isDark ? "border-[#3F3F46] bg-[#1E1F23]" : "border-gray-200 bg-white"
@@ -167,6 +181,16 @@ const SettingsPage = () => {
               </div>
             </div>
           </section>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className="px-4 py-2 rounded-lg accent-bg text-white font-semibold hover:opacity-90 transition-transform active:scale-95"
+          >
+            Confirm
+          </button>
         </div>
       </div>
     </Container>

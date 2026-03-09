@@ -8,15 +8,20 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "api": "node server.js"
+    "api": "node server.js",
+    "start": "node server.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",
     "axios": "^1.13.2",
     "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "flowbite": "^4.0.1",
+    "fs": "^0.0.1-security",
     "ldrs": "^1.1.9",
+    "mongodb": "^6.21.0",
+    "multer": "^2.1.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.66.1",
@@ -43,5 +48,18 @@
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.5"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zaenimaung1/vite_invoice_app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zaenimaung1/vite_invoice_app/issues"
+  },
+  "homepage": "https://github.com/zaenimaung1/vite_invoice_app#readme"
 }

@@ -4,6 +4,7 @@ import useSWR from "swr";
 import useRecordStore from "../store/useRecordStroe";
 import VoucherList from "./SaleTable";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 import Select from "react-select";
 import { useSettings } from "../context/SettingsContext.jsx";
 
@@ -106,6 +107,13 @@ const SaleList = () => {
       if (!res.ok) throw new Error("Failed to save voucher");
 
       toast.success("Voucher confirmed!");
+      Swal.fire({
+        icon: "success",
+        title: "Voucher confirmed",
+        text: "Your voucher has been saved.",
+        timer: 1800,
+        showConfirmButton: false,
+      });
 
       resetRecords();
       reset();

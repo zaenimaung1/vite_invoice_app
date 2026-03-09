@@ -59,7 +59,7 @@ const DashboardPage = () => {
 
   const [chartType, setChartType] = React.useState("donut");
 
-  const slicePalette = ["#A3E635", "#84CC16", "#22C55E", "#4ADE80", "#65A30D", "#B6F542"];
+  const slicePalette = ["#F97316", "#F59E0B", "#FACC15", "#F472B6", "#FB7185", "#FB923C"];
 
   const pieGradient = React.useMemo(() => {
     if (!todayProductSlices.length) return "";

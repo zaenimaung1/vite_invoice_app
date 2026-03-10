@@ -100,6 +100,9 @@ function isNumber(value) {
 function validateProductPayload(body) {
   if (!isNonEmptyString(body?.name)) return "Product name is required";
   if (!isNumber(body?.price)) return "Product price must be a number";
+  if (body?.standardProfit != null && !isNumber(body.standardProfit)) {
+    return "Product standardProfit must be a number";
+  }
   if (body?.id != null && !isNumber(body.id)) return "Product id must be a number";
   return null;
 }
@@ -138,6 +141,15 @@ function validateVoucherPayload(body, { partial = false } = {}) {
   return errors.length ? errors.join(", ") : null;
 }
 
+function sanitizeVoucherItems(items) {
+  if (!Array.isArray(items)) return items;
+  return items.map((item) => {
+    const product = item?.product || {};
+    const { standardProfit: _omitStandardProfit, ...productSafe } = product;
+    return { ...item, product: productSafe };
+  });
+}
+
 // ------------------- PRODUCTS CRUD -------------------
 app.get("/products", async (req, res) => {
   try {
@@ -170,7 +182,14 @@ app.post("/products", async (req, res) => {
     if (error) return res.status(400).json({ error });
     const id = body.id != null ? Number(body.id) : await getNextId(productsCol);
     const created_at = body.created_at || new Date().toISOString();
-    const newProduct = { id, name: body.name, price: body.price, created_at };
+    const standardProfit = isNumber(body.standardProfit) ? body.standardProfit : 0;
+    const newProduct = {
+      id,
+      name: body.name,
+      price: body.price,
+      standardProfit,
+      created_at,
+    };
     await productsCol.insertOne(newProduct);
     res.status(201).json(newProduct);
   } catch {
@@ -188,7 +207,16 @@ app.put("/products/:id", async (req, res) => {
     const body = req.body || {};
     const error = validateProductPayload(body);
     if (error) return res.status(400).json({ error });
-    const updated = { ...existing, name: body.name, price: body.price, created_at: body.created_at || existing.created_at };
+    const standardProfit = isNumber(body.standardProfit)
+      ? body.standardProfit
+      : existing.standardProfit ?? 0;
+    const updated = {
+      ...existing,
+      name: body.name,
+      price: body.price,
+      standardProfit,
+      created_at: body.created_at || existing.created_at,
+    };
     await productsCol.updateOne({ id }, { $set: updated });
     res.json(updated);
   } catch {
@@ -227,7 +255,7 @@ app.post("/vouchers", async (req, res) => {
     const error = validateVoucherPayload(body);
     if (error) return res.status(400).json({ error });
     const id = body.id != null ? Number(body.id) : await getNextId(vouchersCol);
-    const newVoucher = { ...body, id };
+    const newVoucher = { ...body, id, items: sanitizeVoucherItems(body.items) };
     await vouchersCol.insertOne(newVoucher);
     res.status(201).json(newVoucher);
   } catch {
@@ -244,7 +272,13 @@ app.patch("/vouchers/:id", async (req, res) => {
     if (!existing) return res.status(404).json({ error: "Voucher not found" });
     const error = validateVoucherPayload(req.body || {}, { partial: true });
     if (error) return res.status(400).json({ error });
-    const updated = { ...existing, ...req.body, id };
+    const payload = req.body || {};
+    const updated = {
+      ...existing,
+      ...payload,
+      items: payload.items ? sanitizeVoucherItems(payload.items) : existing.items,
+      id,
+    };
     await vouchersCol.updateOne({ id }, { $set: updated });
     res.json(updated);
   } catch {
@@ -373,10 +407,11 @@ app.post("/vouchers/import-excel", upload.single("file"), async (req, res) => {
         const product = productMap.get(Number(pid));
         if (!product) return item;
         const existing = item.product || {};
+        const { standardProfit: _omitStandardProfit, ...existingSafe } = existing;
         return {
           ...item,
           product: {
-            ...existing,
+            ...existingSafe,
             _id: product._id,
             id: product.id,
             name: product.name,

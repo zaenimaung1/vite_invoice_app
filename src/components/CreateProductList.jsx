@@ -13,7 +13,7 @@ const CreateProductList = () => {
   } = useForm();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings, t } = useSettings();
   const isDark = settings.theme === "dark";
 
   const onSubmit = async (data) => {
@@ -29,6 +29,7 @@ const CreateProductList = () => {
       body: JSON.stringify({
         name: data.name,
         price: Number(data.price), // already in MMK
+        standardProfit: Number(data.standardProfit) || 0,
         created_at,
       }),
     });
@@ -54,7 +55,7 @@ const CreateProductList = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Product Name */}
         <div>
-          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>Product Name</label>
+          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>{t("productLabel")}</label>
           <input
             type="text"
             {...register("name", { required: true, minLength: 3, maxLength: 50 })}
@@ -72,10 +73,10 @@ const CreateProductList = () => {
 
         {/* Price in MMK */}
         <div>
-          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>Price (MMK)</label>
+          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>{t("priceLabel")} (MMK)</label>
           <input
             type="number"
-            {...register("price", { required: true, min: 100, max: 1000000 })}
+            {...register("price", { required: true, min: 100, max: 1000000, valueAsNumber: true })}
             placeholder="0"
             className={`w-full px-3 py-2 border rounded-lg outline-none ${
               errors.price ? "border-red-500 focus:ring-2 focus:ring-red-400" : "accent-ring"
@@ -84,6 +85,24 @@ const CreateProductList = () => {
           {errors.price && (
             <p className="text-xs text-red-500 mt-1">
               Price is required (100 - 1,000,000 MMK).
+            </p>
+          )}
+        </div>
+
+        {/* Standard Profit in MMK */}
+        <div>
+          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>{t("standardProfitLabel")} (MMK)</label>
+          <input
+            type="number"
+            {...register("standardProfit", { required: true, min: 0, max: 1000000, valueAsNumber: true })}
+            placeholder="0"
+            className={`w-full px-3 py-2 border rounded-lg outline-none ${
+              errors.standardProfit ? "border-red-500 focus:ring-2 focus:ring-red-400" : "accent-ring"
+            } ${isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5] placeholder:text-[#71717A]" : "bg-white border-gray-200 text-gray-800 placeholder:text-gray-400"}`}
+          />
+          {errors.standardProfit && (
+            <p className="text-xs text-red-500 mt-1">
+              Standard profit is required (0 - 1,000,000 MMK).
             </p>
           )}
         </div>
@@ -99,6 +118,7 @@ const CreateProductList = () => {
             Make sure all fields are correct
           </label>
         </div>
+
 
         {/* Back Checkbox */}
         <div className="flex items-center gap-2">

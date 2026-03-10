@@ -10,7 +10,7 @@ newtonsCradle.register();
 const ProductDataList = ({ product = {} }) => {
   const { formatCurrency, settings, t } = useSettings();
   const isDark = settings.theme === "dark";
-  const { id, name, price, created_at } = product;
+  const { id, name, price, standardProfit, created_at } = product;
 
   // Format date (en-GB style)
   const date = new Date(created_at);
@@ -20,7 +20,10 @@ const ProductDataList = ({ product = {} }) => {
     day: "numeric",
   });
 
-  const formatPrice = (value) => (value ? formatCurrency(value) : "-");
+  const formatPrice = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? formatCurrency(n) : "-";
+  };
 
   const { mutate } = useSWRConfig();
   const [loading, setLoading] = useState(false);
@@ -67,6 +70,10 @@ const ProductDataList = ({ product = {} }) => {
 
       <td className={`px-3 sm:px-4 py-4 text-right font-medium whitespace-nowrap ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>
         {formatPrice(price)}
+      </td>
+
+      <td className={`px-3 sm:px-4 py-4 text-right font-medium whitespace-nowrap ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>
+        {formatPrice(standardProfit)}
       </td>
 
       <td className={`px-3 sm:px-4 py-4 text-sm whitespace-nowrap ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{formattedDate}</td>

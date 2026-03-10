@@ -13,24 +13,125 @@ const DashboardPage = () => {
 
   const activeVouchers = Array.isArray(vouchers) ? vouchers.filter((v) => !v.deleted) : [];
 
-  // Compute today's overview
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayVouchers = activeVouchers
-    ? activeVouchers.filter(v => v.date && v.date.slice(0, 10) === todayStr)
-    : [];
-  const todaySales = todayVouchers.reduce((sum, v) => sum + (v.items?.length || 0), 0);
-  const todayRevenue = todayVouchers.reduce((sum, v) => sum + (v.grandTotal || 0), 0);
+  const [rangeType, setRangeType] = React.useState("today");
+  const [customFrom, setCustomFrom] = React.useState("");
+  const [customTo, setCustomTo] = React.useState("");
+
+  const toDateKey = React.useCallback((value) => {
+    const d = value ? new Date(value) : new Date();
+    if (Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }, []);
+
+  const todayStr = toDateKey();
+
+  const getRange = React.useCallback(() => {
+    const now = new Date();
+    const today = toDateKey(now);
+
+    if (rangeType === "today") {
+      return { from: today, to: today, label: t("rangeToday") };
+    }
+
+    if (rangeType === "week") {
+      const day = now.getDay();
+      const diff = (day === 0 ? -6 : 1) - day;
+      const start = new Date(now);
+      start.setDate(now.getDate() + diff);
+      const from = toDateKey(start);
+      return { from, to: today, label: t("rangeWeek") };
+    }
+
+    if (rangeType === "month") {
+      const from = toDateKey(new Date(now.getFullYear(), now.getMonth(), 1));
+      return { from, to: today, label: t("rangeMonth") };
+    }
+
+    if (rangeType === "custom") {
+      const from = customFrom || today;
+      const to = customTo || today;
+      return { from, to, label: t("rangeCustom") };
+    }
+
+    return { from: today, to: today, label: t("rangeToday") };
+  }, [rangeType, customFrom, customTo, toDateKey, t]);
+
+  const range = getRange();
+
+  const filteredVouchers = React.useMemo(() => {
+    if (!Array.isArray(activeVouchers)) return [];
+    return activeVouchers.filter((v) => {
+      if (!v?.date) return false;
+      const d = toDateKey(v.date);
+      return d >= range.from && d <= range.to;
+    });
+  }, [activeVouchers, range.from, range.to]);
+
+  const totalSales = filteredVouchers.reduce(
+    (sum, v) => sum + (v.items?.length || 0),
+    0
+  );
+  const totalRevenue = filteredVouchers.reduce(
+    (sum, v) => sum + (v.grandTotal || 0),
+    0
+  );
   const monthlyRevenue = activeVouchers.reduce((sum, v) => {
-    if (v.date && v.date.slice(0, 7) === todayStr.slice(0, 7)) {
+    const monthKey = toDateKey(v.date).slice(0, 7);
+    if (monthKey && monthKey === todayStr.slice(0, 7)) {
       return sum + (v.grandTotal || 0);
     }
     return sum;
   }, 0);
   const productCount = Array.isArray(products) ? products.length : 0;
-
-  const todayProductSlices = React.useMemo(() => {
+  const productProfitMap = React.useMemo(() => {
     const map = new Map();
-    for (const v of todayVouchers) {
+    (products || []).forEach((p) => {
+      const id = Number(p.id);
+      if (!Number.isFinite(id)) return;
+      map.set(id, Number(p.standardProfit) || 0);
+    });
+    return map;
+  }, [products]);
+
+  const calcVoucherProfit = React.useCallback(
+    (voucher) => {
+      let sum = 0;
+      for (const it of voucher?.items || []) {
+        const qty = Number(it.quantity ?? it.qty ?? 1);
+        if (!Number.isFinite(qty)) continue;
+        const prod = it.product || {};
+        const pid = Number(prod.id ?? it.productId ?? it.product_id);
+        const perProfit = productProfitMap.get(pid) ?? 0;
+        if (!Number.isFinite(perProfit)) continue;
+        sum += qty * perProfit;
+      }
+      return sum;
+    },
+    [productProfitMap]
+  );
+
+  const todayProfit = activeVouchers.reduce((sum, v) => {
+    if (!v?.date) return sum;
+    return toDateKey(v.date) === todayStr
+      ? sum + calcVoucherProfit(v)
+      : sum;
+  }, 0);
+
+  const monthlyProfit = activeVouchers.reduce((sum, v) => {
+    if (!v?.date) return sum;
+    const monthKey = toDateKey(v.date).slice(0, 7);
+    if (monthKey && monthKey === todayStr.slice(0, 7)) {
+      return sum + calcVoucherProfit(v);
+    }
+    return sum;
+  }, 0);
+
+  const rangeProductSlices = React.useMemo(() => {
+    const map = new Map();
+    for (const v of filteredVouchers) {
       for (const it of v.items || []) {
         const name = it.product?.name || "Unknown";
         const amount = Number(it.cost || 0);
@@ -48,7 +149,33 @@ const DashboardPage = () => {
         value,
         percent: (value / total) * 100,
       }));
-  }, [todayVouchers]);
+  }, [filteredVouchers]);
+
+  const rangeProfitSlices = React.useMemo(() => {
+    const map = new Map();
+    for (const v of filteredVouchers) {
+      for (const it of v.items || []) {
+        const name = it.product?.name || "Unknown";
+        const qty = Number(it.quantity ?? it.qty ?? 1);
+        const pid = Number(it.product?.id ?? it.productId ?? it.product_id);
+        const perProfit = productProfitMap.get(pid) ?? 0;
+        const amount = qty * perProfit;
+        if (!Number.isFinite(amount)) continue;
+        map.set(name, (map.get(name) || 0) + amount);
+      }
+    }
+    const entries = Array.from(map.entries());
+    const total = entries.reduce((sum, [, value]) => sum + value, 0);
+    if (!total) return [];
+
+    return entries
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({
+        name,
+        value,
+        percent: (value / total) * 100,
+      }));
+  }, [filteredVouchers, productProfitMap]);
 
   const chartTypes = [
     { value: "donut", label: "Donut" },
@@ -58,43 +185,71 @@ const DashboardPage = () => {
   ];
 
   const [chartType, setChartType] = React.useState("donut");
+  const [profitChartType, setProfitChartType] = React.useState("donut");
 
   const slicePalette = ["#F97316", "#F59E0B", "#FACC15", "#F472B6", "#FB7185", "#FB923C"];
+  const profitPalette = ["#2563EB", "#0EA5E9", "#22D3EE", "#10B981", "#34D399", "#60A5FA"];
 
   const pieGradient = React.useMemo(() => {
-    if (!todayProductSlices.length) return "";
+    if (!rangeProductSlices.length) return "";
     let current = 0;
-    const segments = todayProductSlices.map((slice, idx) => {
+    const segments = rangeProductSlices.map((slice, idx) => {
       const start = current;
       const end = current + slice.percent;
-      const color = slicePalette[idx % slicePalette.length];
+      const color = profitPalette[idx % profitPalette.length];
       current = end;
       return `${color} ${start}% ${end}%`;
     });
     return `conic-gradient(${segments.join(", ")})`;
-  }, [todayProductSlices, slicePalette]);
+  }, [rangeProductSlices, slicePalette]);
+
+  const profitPieGradient = React.useMemo(() => {
+    if (!rangeProfitSlices.length) return "";
+    let current = 0;
+    const segments = rangeProfitSlices.map((slice, idx) => {
+      const start = current;
+      const end = current + slice.percent;
+      const color = profitPalette[idx % profitPalette.length];
+      current = end;
+      return `${color} ${start}% ${end}%`;
+    });
+    return `conic-gradient(${segments.join(", ")})`;
+  }, [rangeProfitSlices, profitPalette]);
 
   const radarSlices = React.useMemo(() => {
-    return todayProductSlices.slice(0, 6);
-  }, [todayProductSlices]);
+    return rangeProductSlices.slice(0, 6);
+  }, [rangeProductSlices]);
+
+  const profitRadarSlices = React.useMemo(() => {
+    return rangeProfitSlices.slice(0, 6);
+  }, [rangeProfitSlices]);
 
   const maxRadarValue = React.useMemo(() => {
     if (!radarSlices.length) return 1;
     return radarSlices.reduce((m, s) => (s.value > m ? s.value : m), 0) || 1;
   }, [radarSlices]);
 
+  const maxProfitRadarValue = React.useMemo(() => {
+    if (!profitRadarSlices.length) return 1;
+    return profitRadarSlices.reduce((m, s) => (s.value > m ? s.value : m), 0) || 1;
+  }, [profitRadarSlices]);
+
   return (
     <Container>
       <div className="w-full">
         {/* Header */}
-        <h1 className={`text-3xl font-bold mb-2 ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>{t("dashboard")}</h1>
-        <p className={`${isDark ? "text-[#A1A1AA]" : "text-gray-500"} mb-6`}>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+          {t("dashboard")}
+        </h1>
+        <p className="mb-6" style={{ color: "var(--text-secondary)" }}>
           {t("dashboardSubtitle")}
         </p>
 
         {/* Card Section */}
-        <div className={`shadow-lg rounded-2xl p-6 ${isDark ? "bg-[#2A2D34] border border-[#2E2E33]" : "bg-white"}`}>
-          <h2 className={`text-xl font-semibold mb-4 ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>{t("modules")}</h2>
+        <div className="card p-6">
+          <h2 className="text-xl font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
+            {t("modules")}
+          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ModuleBtn
@@ -169,14 +324,63 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Today Overview Section */}
+        {/* Overview Section */}
         <div className="mt-10">
-          <h2 className={`text-2xl font-semibold mb-6 ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>{t("overview")}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>
+              {t("overview")}
+            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={rangeType}
+                onChange={(e) => setRangeType(e.target.value)}
+                className="rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 accent-ring"
+                style={{
+                  borderColor: "var(--card-border)",
+                  background: "var(--card-bg)",
+                  color: "var(--text-primary)",
+                }}
+              >
+                <option value="today">{t("rangeToday")}</option>
+                <option value="week">{t("rangeWeek")}</option>
+                <option value="month">{t("rangeMonth")}</option>
+                <option value="custom">{t("rangeCustom")}</option>
+              </select>
+              {rangeType === "custom" && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 accent-ring"
+                    style={{
+                      borderColor: "var(--card-border)",
+                      background: "var(--card-bg)",
+                      color: "var(--text-primary)",
+                    }}
+                  />
+                  <span style={{ color: "var(--text-secondary)" }}>{t("rangeTo")}</span>
+                  <input
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 accent-ring"
+                    style={{
+                      borderColor: "var(--card-border)",
+                      background: "var(--card-bg)",
+                      color: "var(--text-primary)",
+                    }}
+                  />
+                </div>
+              )}
+              <span className="chip">
+                {range.label}: {range.from} → {range.to}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Total Products */}
-            <div className={`flex items-center p-4 rounded-xl shadow hover:shadow-lg border transition ${
-              isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"
-            }`}>
+            <div className="card flex items-center p-4 transition hover:shadow-lg">
               <div className="p-3 bg-blue-100 rounded-full text-blue-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -188,15 +392,13 @@ const DashboardPage = () => {
                 </svg>
               </div>
               <div>
-                <p className={`text-2xl font-bold ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>{productCount}</p>
-                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("totalProducts")}</p>
+                <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>{productCount}</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{t("totalProducts")}</p>
               </div>
             </div>
 
             {/* Today Sales */}
-            <div className={`flex items-center p-4 rounded-xl shadow hover:shadow-lg border transition ${
-              isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"
-            }`}>
+            <div className="card flex items-center p-4 transition hover:shadow-lg">
               <div className="p-3 bg-green-100 rounded-full text-green-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -205,15 +407,15 @@ const DashboardPage = () => {
                 </svg>
               </div>
               <div>
-                <p className={`text-2xl font-bold ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>{todaySales}</p>
-                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("todaySales")}</p>
+                <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>{totalSales}</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                  {t("salesRangeLabel")} ({range.label})
+                </p>
               </div>
             </div>
 
             {/* Today Revenue */}
-            <div className={`flex items-center p-4 rounded-xl shadow hover:shadow-lg border transition ${
-              isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"
-            }`}>
+            <div className="card flex items-center p-4 transition hover:shadow-lg">
               <div className="p-3 bg-yellow-100 rounded-full text-yellow-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -223,18 +425,18 @@ const DashboardPage = () => {
                 </svg>
               </div>
               <div>
-                <p className={`text-2xl font-bold ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>
-                  {formatCurrency(Math.round(todayRevenue))}
+                <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {formatCurrency(Math.round(totalRevenue))}
                 </p>
-                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("todayRevenue")}</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                  {t("revenueRangeLabel")} ({range.label})
+                </p>
               </div>
             </div>
 
 
             {/* Monthly Revenue */}
-            <div className={`flex items-center p-4 rounded-xl shadow hover:shadow-lg border transition ${
-              isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"
-            }`}>
+            <div className="card flex items-center p-4 transition hover:shadow-lg">
               <div className="p-3 bg-red-100 rounded-full text-red-700 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
                   viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -243,36 +445,74 @@ const DashboardPage = () => {
                 </svg>
               </div>
               <div>
-                <p className={`text-2xl font-bold ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>
+                <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
                   {formatCurrency(Math.round(monthlyRevenue))}
                 </p>
-                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("monthlyRevenue")}</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{t("monthlyRevenue")}</p>
+              </div>
+            </div>
+
+            {/* Today Profit */}
+            <div className="card flex items-center p-4 transition hover:shadow-lg">
+              <div className="p-3 bg-emerald-100 rounded-full text-emerald-700 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {formatCurrency(Math.round(todayProfit))}
+                </p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{t("todayProfit")}</p>
+              </div>
+            </div>
+
+            {/* Monthly Profit */}
+            <div className="card flex items-center p-4 transition hover:shadow-lg">
+              <div className="p-3 bg-amber-100 rounded-full text-amber-700 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m6-9H6" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {formatCurrency(Math.round(monthlyProfit))}
+                </p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{t("monthlyProfit")}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Charts */}
-        <div className="mt-10">
-          <div className={`rounded-2xl border shadow-sm p-5 ${isDark ? "bg-[#2A2D34] border-[#2E2E33]" : "bg-white border-gray-200"}`}>
+        <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="card p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className={`text-xl font-semibold ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>{t("todayProductShare")}</h2>
-                <p className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("todayProductShareDesc")}</p>
+                <h2 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {t("todayProductShare")}
+                </h2>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                  {t("todayProductShareDesc")}
+                </p>
               </div>
               <div className="flex items-center gap-2">
-                <label className={`text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`} htmlFor="chartType">
+                <label className="text-xs" style={{ color: "var(--text-secondary)" }} htmlFor="chartType">
                   {t("chartType")}
                 </label>
                 <select
                   id="chartType"
                   value={chartType}
                   onChange={(event) => setChartType(event.target.value)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 accent-ring ${
-                    isDark
-                      ? "border-[#3F3F46] bg-[#1E1F23] text-[#F5F5F5]"
-                      : "border-gray-200 bg-white text-gray-700"
-                  }`}
+                  className="rounded-lg border px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 accent-ring"
+                  style={{
+                    borderColor: "var(--card-border)",
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                  }}
                 >
                   {chartTypes.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -283,14 +523,16 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            {todayProductSlices.length === 0 ? (
-              <div className={`text-sm italic mt-4 ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("noSalesToday")}</div>
+            {rangeProductSlices.length === 0 ? (
+              <div className={`text-sm italic mt-4 ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>
+                {t("noSalesInRange")}
+              </div>
             ) : (
               <div className="mt-4 flex flex-col items-center gap-4">
                 {chartType === "bar" && (
                   <div className="w-full space-y-3">
-                    {todayProductSlices.map((slice, idx) => {
-                      const color = slicePalette[idx % slicePalette.length];
+                    {rangeProductSlices.map((slice, idx) => {
+                      const color = profitPalette[idx % profitPalette.length];
                       return (
                         <div key={slice.name} className="space-y-1">
                           <div className={`flex items-center justify-between text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-600"}`}>
@@ -383,8 +625,168 @@ const DashboardPage = () => {
                 )}
 
                 <div className="w-full space-y-2 text-xs">
-                  {todayProductSlices.map((slice, idx) => {
+                  {rangeProductSlices.map((slice, idx) => {
                     const color = slicePalette[idx % slicePalette.length];
+                    return (
+                      <div key={slice.name} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="inline-block h-2 w-2 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className={`truncate max-w-[160px] ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>
+                            {slice.name}
+                          </span>
+                        </div>
+                        <div className={`${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>
+                          {slice.percent.toFixed(1)}%
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="card p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {t("profitShare")}
+                </h2>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                  {t("profitShareDesc")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs" style={{ color: "var(--text-secondary)" }} htmlFor="profitChartType">
+                  {t("chartType")}
+                </label>
+                <select
+                  id="profitChartType"
+                  value={profitChartType}
+                  onChange={(event) => setProfitChartType(event.target.value)}
+                  className="rounded-lg border px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 accent-ring"
+                  style={{
+                    borderColor: "var(--card-border)",
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {chartTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {rangeProfitSlices.length === 0 ? (
+              <div className={`text-sm italic mt-4 ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>
+                {t("noSalesInRange")}
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-col items-center gap-4">
+                {profitChartType === "bar" && (
+                  <div className="w-full space-y-3">
+                    {rangeProfitSlices.map((slice, idx) => {
+                      const color = profitPalette[idx % profitPalette.length];
+                      return (
+                        <div key={slice.name} className="space-y-1">
+                          <div className={`flex items-center justify-between text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-600"}`}>
+                            <span className="truncate max-w-[220px]">{slice.name}</span>
+                            <span>{slice.percent.toFixed(1)}%</span>
+                          </div>
+                          <div className={`h-2 w-full rounded-full ${isDark ? "bg-[#24262C]" : "bg-gray-100"}`}>
+                            <div
+                              className="h-2 rounded-full"
+                              style={{ width: `${slice.percent}%`, backgroundColor: color }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {(profitChartType === "pie" || profitChartType === "donut") && (
+                  <div className="relative w-40 h-40">
+                    <div
+                      className="w-40 h-40 rounded-full shadow-inner"
+                      style={{
+                        backgroundImage: profitPieGradient,
+                      }}
+                    />
+                    {profitChartType === "donut" && (
+                      <div className={`absolute inset-0 m-6 rounded-full shadow-inner ${isDark ? "bg-[#1E1F23]" : "bg-white"}`} />
+                    )}
+                  </div>
+                )}
+
+                {profitChartType === "radar" && (
+                  <div className="w-full flex justify-center">
+                    <svg width="220" height="220" viewBox="0 0 220 220">
+                      <g transform="translate(110 110)">
+                        {[0.33, 0.66, 1].map((scale) => {
+                          const points = profitRadarSlices
+                            .map((_, idx) => {
+                              const angle = (Math.PI * 2 * idx) / profitRadarSlices.length - Math.PI / 2;
+                              const r = 80 * scale;
+                              const x = r * Math.cos(angle);
+                              const y = r * Math.sin(angle);
+                              return `${x},${y}`;
+                            })
+                            .join(" ");
+                          return (
+                            <polygon
+                              key={scale}
+                              points={points}
+                              fill="none"
+                              stroke={isDark ? "#3F3F46" : "#e5e7eb"}
+                              strokeWidth="1"
+                            />
+                          );
+                        })}
+                        {profitRadarSlices.map((_, idx) => {
+                          const angle = (Math.PI * 2 * idx) / profitRadarSlices.length - Math.PI / 2;
+                          const x = 80 * Math.cos(angle);
+                          const y = 80 * Math.sin(angle);
+                          return (
+                            <line
+                              key={idx}
+                              x1="0"
+                              y1="0"
+                              x2={x}
+                              y2={y}
+                              stroke={isDark ? "#3F3F46" : "#e5e7eb"}
+                              strokeWidth="1"
+                            />
+                          );
+                        })}
+                        <polygon
+                          points={profitRadarSlices
+                            .map((slice, idx) => {
+                              const angle = (Math.PI * 2 * idx) / profitRadarSlices.length - Math.PI / 2;
+                              const r = (slice.value / maxProfitRadarValue) * 80;
+                              const x = r * Math.cos(angle);
+                              const y = r * Math.sin(angle);
+                              return `${x},${y}`;
+                            })
+                            .join(" ")}
+                          fill="rgba(37, 99, 235, 0.25)"
+                          stroke="#2563EB"
+                          strokeWidth="2"
+                        />
+                      </g>
+                    </svg>
+                  </div>
+                )}
+
+                <div className="w-full space-y-2 text-xs">
+                  {rangeProfitSlices.map((slice, idx) => {
+                    const color = profitPalette[idx % profitPalette.length];
                     return (
                       <div key={slice.name} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import useRecordStore from "../store/useRecordStroe";
 import VoucherList from "./SaleTable";
 import toast from "react-hot-toast";
@@ -13,6 +13,7 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 const SaleList = () => {
   const { taxRate, settings, t } = useSettings();
   const isDark = settings.theme === "dark";
+  const { mutate } = useSWRConfig();
   const {
     register,
     handleSubmit,
@@ -81,13 +82,25 @@ const SaleList = () => {
     const subTotal = records.reduce((sum, rec) => sum + rec.cost, 0);
     const tax = subTotal * taxRate;
     const grandTotal = subTotal + tax;
+    const sanitizedItems = records.map((rec) => {
+      const prod = rec.product || {};
+      return {
+        ...rec,
+        product: {
+          id: prod.id,
+          name: prod.name,
+          price: prod.price,
+          created_at: prod.created_at,
+        },
+      };
+    });
 
     const voucherJSON = {
       username: values.username,
       phoneNumber: values.phoneNumber,
       voucherId,
       date: new Date().toISOString(),
-      items: records,
+      items: sanitizedItems,
       subTotal,
       tax,
       taxRate: settings.taxPercent,
@@ -117,6 +130,7 @@ const SaleList = () => {
 
       resetRecords();
       reset();
+      mutate(import.meta.env.VITE_API_URL + "/vouchers");
     } catch (error) {
       console.error("Error saving voucher:", error);
       toast.error("Error saving voucher");
@@ -132,12 +146,8 @@ const SaleList = () => {
 
   return (
       <section className="w-full">
-        <div
-          className={`rounded-xl shadow-sm border p-6 ${
-            isDark ? "bg-[#1E1F23] border-[#2E2E33]" : "bg-white border-gray-200"
-          }`}
-        >
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? "text-[#F5F5F5]" : "text-gray-800"}`}>
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
             {t("addSale")}
           </h3>
 
@@ -147,23 +157,20 @@ const SaleList = () => {
           >
             {/* Voucher ID */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
+              <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                 {t("voucherId")}
               </label>
               <input
                 value={voucherId}
                 readOnly
-                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring ${
-                  isDark
-                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
-                    : "bg-white border-gray-200 text-gray-800"
-                }`}
+                className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring"
+                style={{ borderColor: "var(--card-border)", background: "var(--card-muted)", color: "var(--text-primary)" }}
               />
             </div>
 
             {/* Customer Name */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
+              <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                 {t("customerName")}
               </label>
               <input
@@ -171,11 +178,8 @@ const SaleList = () => {
                 {...register("username", {
                   required: "Customer name is required",
                 })}
-                className={`border p-2 rounded w-full focus:outline-none focus:ring-2 accent-ring ${
-                  isDark
-                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
-                    : "bg-white border-gray-200 text-gray-800"
-                }`}
+                className="border p-2 rounded w-full focus:outline-none focus:ring-2 accent-ring"
+                style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)" }}
               />
               {errors.username && (
                 <p className="text-red-500 text-sm mt-1">
@@ -186,7 +190,7 @@ const SaleList = () => {
 
             {/* Phone Number */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
+              <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                 {t("phoneNumberLabel")}
               </label>
               <input
@@ -200,11 +204,8 @@ const SaleList = () => {
                       "Phone must start with 09 and be 7-11 digits",
                   },
                 })}
-                className={`border p-2 rounded w-full focus:outline-none focus:ring-2 accent-ring ${
-                  isDark
-                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
-                    : "bg-white border-gray-200 text-gray-800"
-                }`}
+                className="border p-2 rounded w-full focus:outline-none focus:ring-2 accent-ring"
+                style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)" }}
               />
               {errors.phoneNumber && (
                 <p className="text-red-500 text-sm mt-1">
@@ -215,7 +216,7 @@ const SaleList = () => {
 
             {/* Product */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
+              <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                 {t("productLabel")}
               </label>
               <Controller
@@ -300,7 +301,7 @@ const SaleList = () => {
 
             {/* Quantity */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
+              <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                 {t("quantityLabel")}
               </label>
               <input
@@ -309,28 +310,22 @@ const SaleList = () => {
                   required: true,
                   min: 1,
                 })}
-                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring ${
-                  isDark
-                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
-                    : "bg-white border-gray-200 text-gray-800"
-                }`}
+                className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring"
+                style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)" }}
               />
             </div>
 
             {/* Date */}
             <div>
-              <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>
+              <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                 {t("dateLabel")}
               </label>
               <input
                 type="date"
                 defaultValue={new Date().toISOString().slice(0, 10)}
                 {...register("date", { required: true })}
-                className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring ${
-                  isDark
-                    ? "bg-[#2A2D34] border-[#3F3F46] text-[#F5F5F5]"
-                    : "bg-white border-gray-200 text-gray-800"
-                }`}
+                className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring"
+                style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)" }}
               />
             </div>
 
@@ -338,7 +333,7 @@ const SaleList = () => {
             <div className="lg:col-span-3 flex flex-col sm:flex-row sm:justify-end gap-3">
               <button
                 type="submit"
-                className="w-full sm:w-auto px-4 py-2 rounded-lg accent-bg hover:opacity-90"
+                className="btn btn-primary w-full sm:w-auto"
               >
                 {t("addSaleBtn")}
               </button>
@@ -347,12 +342,8 @@ const SaleList = () => {
                 type="button"
                 onClick={confirmVoucher}
                 disabled={records.length === 0}
-                className={`w-full sm:w-auto px-4 py-2  rounded-lg text-white ${
-                  records.length === 0
-                    ? isDark
-                      ? "bg-[#3F3F46] text-[#A1A1AA]"
-                      : "bg-gray-400"
-                    : "accent-bg hover:opacity-90"
+                className={`btn w-full sm:w-auto ${
+                  records.length === 0 ? "btn-ghost opacity-60 cursor-not-allowed" : "btn-primary"
                 }`}
               >
                 {t("confirmVoucher")}

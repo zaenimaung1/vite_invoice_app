@@ -107,6 +107,9 @@ const ProductList = () => {
                     {t("priceLabel")}
                   </th>
                   <th scope="col" className="w-28 px-3 sm:px-4 py-3 text-right">
+                    {t("standardProfitLabel")}
+                  </th>
+                  <th scope="col" className="w-28 px-3 sm:px-4 py-3 text-right">
                     {t("createDate")}
                   </th>
                   <th scope="col" className="w-48 px-3 sm:px-4 py-3 text-right">

@@ -8,7 +8,7 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 const EditProductList = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings, t } = useSettings();
   const isDark = settings.theme === "dark";
 
   // Fetch product
@@ -31,7 +31,8 @@ const EditProductList = () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: data.name,
-        price: data.price,
+        price: Number(data.price),
+        standardProfit: Number(data.standardProfit) || 0,
         created_at: new Date().toISOString()
       })
     });
@@ -54,7 +55,7 @@ const EditProductList = () => {
       ) : <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Name */}
         <div>
-          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>Product Name</label>
+          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>{t("productLabel")}</label>
           <input
             type="text"
             defaultValue={data.name}
@@ -70,16 +71,33 @@ const EditProductList = () => {
 
         {/* Price */}
         <div>
-          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>Price</label>
+          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>{t("priceLabel")}</label>
           <input
             type="number"
             defaultValue={data.price}
-            {...register("price", { required: true, min: 100 })}
+            {...register("price", { required: true, min: 100, valueAsNumber: true })}
             className={`w-full px-3 py-2 border rounded-lg accent-ring ${
               isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5]" : "bg-white border-gray-200 text-gray-800"
             }`}
           />
         </div>
+
+        {/* Standard Profit */}
+        <div>
+          <label className={`block text-sm font-medium mb-1 ${isDark ? "text-[#A1A1AA]" : "text-gray-700"}`}>{t("standardProfitLabel")}</label>
+          <input
+            type="number"
+            defaultValue={data.standardProfit ?? 0}
+            {...register("standardProfit", { required: true, min: 0, valueAsNumber: true })}
+            className={`w-full px-3 py-2 border rounded-lg accent-ring ${
+              isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5]" : "bg-white border-gray-200 text-gray-800"
+            }`}
+          />
+          {errors.standardProfit && (
+            <p className="text-xs text-red-500">Standard profit is required.</p>
+          )}
+        </div>
+
 
       
 

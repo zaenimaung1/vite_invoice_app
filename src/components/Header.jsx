@@ -11,18 +11,16 @@ const Header = () => {
   const phoneLine = settings.phoneNumber?.trim();
 
   return (
-    <header className={`${isDark ? "bg-[#24262C]" : "bg-white"} shadow`}>
+    <header className="border-b" style={{ borderColor: "var(--card-border)", background: "var(--card-muted)" }}>
       <Container className="py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1
-              className={`text-lg font-semibold ${
-                isDark ? "text-[#F5F5F5]" : "text-gray-800"
-              } accent-text`}
+              className="text-xl sm:text-2xl font-semibold brand-font accent-text"
             >
               {settings.shopName || "Voucher App"}
             </h1>
-            <div className={`text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>
+            <div className="text-xs brand-font" style={{ color: "var(--text-secondary)" }}>
               {addressLine && <div>{addressLine}</div>}
               {phoneLine && <div>{phoneLine}</div>}
               {!addressLine && !phoneLine && <div>{t("manageSettings")}</div>}
@@ -31,7 +29,7 @@ const Header = () => {
 
           <Link
             to="/settings"
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold shadow-sm transition text-white accent-bg hover:opacity-90"
+            className="btn btn-primary text-sm"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

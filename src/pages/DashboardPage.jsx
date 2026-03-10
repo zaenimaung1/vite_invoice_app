@@ -179,9 +179,17 @@ const DashboardPage = () => {
 
   const chartTypes = [
     { value: "donut", label: "Donut" },
-    { value: "pie", label: "Pie" },
+    { value: "density", label: "Density" },
     { value: "bar", label: "Bar" },
     { value: "radar", label: "Radar" },
+    { value: "line", label: "Line" },
+  ];
+
+  const profitChartTypes = [
+    { value: "donut", label: "Donut" },
+    { value: "density", label: "Density" },
+    { value: "bar", label: "Bar" },
+    { value: "line", label: "Line" },
   ];
 
   const [chartType, setChartType] = React.useState("donut");
@@ -196,7 +204,7 @@ const DashboardPage = () => {
     const segments = rangeProductSlices.map((slice, idx) => {
       const start = current;
       const end = current + slice.percent;
-      const color = profitPalette[idx % profitPalette.length];
+      const color = slicePalette[idx % slicePalette.length];
       current = end;
       return `${color} ${start}% ${end}%`;
     });
@@ -215,6 +223,20 @@ const DashboardPage = () => {
     });
     return `conic-gradient(${segments.join(", ")})`;
   }, [rangeProfitSlices, profitPalette]);
+
+  const getPieLabels = React.useCallback((slices, radius) => {
+    let current = 0;
+    return slices.map((slice) => {
+      const start = current;
+      const end = current + slice.percent;
+      const mid = (start + end) / 2;
+      current = end;
+      const angle = (mid / 100) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      return { name: slice.name, x, y };
+    });
+  }, []);
 
   const radarSlices = React.useMemo(() => {
     return rangeProductSlices.slice(0, 6);
@@ -514,13 +536,13 @@ const DashboardPage = () => {
                     color: "var(--text-primary)",
                   }}
                 >
-                  {chartTypes.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                {profitChartTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             </div>
 
             {rangeProductSlices.length === 0 ? (
@@ -532,16 +554,17 @@ const DashboardPage = () => {
                 {chartType === "bar" && (
                   <div className="w-full space-y-3">
                     {rangeProductSlices.map((slice, idx) => {
-                      const color = profitPalette[idx % profitPalette.length];
+                      const color = slicePalette[idx % slicePalette.length];
                       return (
-                        <div key={slice.name} className="space-y-1">
-                          <div className={`flex items-center justify-between text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-600"}`}>
+                        <div key={slice.name} className="group space-y-1">
+                          <div className={`flex items-center justify-between text-xs opacity-0 transition group-hover:opacity-100 ${isDark ? "text-[#A1A1AA]" : "text-gray-600"}`}>
                             <span className="truncate max-w-[220px]">{slice.name}</span>
                             <span>{slice.percent.toFixed(1)}%</span>
                           </div>
                           <div className={`h-2 w-full rounded-full ${isDark ? "bg-[#24262C]" : "bg-gray-100"}`}>
                             <div
                               className="h-2 rounded-full"
+                              title={slice.name}
                               style={{ width: `${slice.percent}%`, backgroundColor: color }}
                             />
                           </div>
@@ -551,8 +574,8 @@ const DashboardPage = () => {
                   </div>
                 )}
 
-                {(chartType === "pie" || chartType === "donut") && (
-                  <div className="relative w-40 h-40">
+                {chartType === "donut" && (
+                  <div className="group relative w-40 h-40">
                     <div
                       className="w-40 h-40 rounded-full shadow-inner"
                       style={{
@@ -562,11 +585,88 @@ const DashboardPage = () => {
                     {chartType === "donut" && (
                       <div className={`absolute inset-0 m-6 rounded-full shadow-inner ${isDark ? "bg-[#1E1F23]" : "bg-white"}`} />
                     )}
+                    <div className="absolute inset-0">
+                      {getPieLabels(rangeProductSlices, 60).map((label) => (
+                        <span
+                          key={label.name}
+                          className={`absolute text-[10px] opacity-0 transition group-hover:opacity-100 ${isDark ? "text-[#E5E7EB]" : "text-gray-700"}`}
+                          style={{
+                            left: "50%",
+                            top: "50%",
+                            transform: `translate(${label.x}px, ${label.y}px) translate(-50%, -50%)`,
+                            maxWidth: "70px",
+                          }}
+                        >
+                          {label.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {chartType === "density" && (
+                  <div className="group w-full flex justify-center">
+                    <svg width="260" height="200" viewBox="0 0 260 200">
+                      <g transform="translate(20 20)">
+                        <rect
+                          x="0"
+                          y="0"
+                          width="220"
+                          height="160"
+                          fill="none"
+                          stroke={isDark ? "#3F3F46" : "#e5e7eb"}
+                          strokeWidth="1"
+                        />
+                        {radarSlices.length > 1 && (
+                          <path
+                            d={[
+                              "M",
+                              ...radarSlices.map((slice, idx) => {
+                                const x = (220 / (radarSlices.length - 1)) * idx;
+                                const y = 160 - (slice.value / maxRadarValue) * 140;
+                                return `${x} ${y}`;
+                              }),
+                              "L",
+                              220,
+                              160,
+                              "L",
+                              0,
+                              160,
+                              "Z",
+                            ].join(" ")}
+                            fill={isDark ? "rgba(249, 115, 22, 0.25)" : "rgba(249, 115, 22, 0.2)"}
+                            stroke={slicePalette[0]}
+                            strokeWidth="2"
+                          />
+                        )}
+                        {radarSlices.map((slice, idx) => {
+                          const x = (220 / Math.max(1, radarSlices.length - 1)) * idx;
+                          const y = 160 - (slice.value / maxRadarValue) * 140;
+                          const pointColor = slicePalette[idx % slicePalette.length];
+                          return (
+                            <g key={slice.name}>
+                              <circle cx={x} cy={y} r="3" fill={pointColor}>
+                                <title>{slice.name}</title>
+                              </circle>
+                              <text
+                                x={x + 4}
+                                y={y - 6}
+                                fontSize="9"
+                                className="opacity-0 transition group-hover:opacity-100"
+                                fill={isDark ? "#E5E7EB" : "#4B5563"}
+                              >
+                                {slice.name}
+                              </text>
+                            </g>
+                          );
+                        })}
+                      </g>
+                    </svg>
                   </div>
                 )}
 
                 {chartType === "radar" && (
-                  <div className="w-full flex justify-center">
+                  <div className="group w-full flex justify-center">
                     <svg width="220" height="220" viewBox="0 0 220 220">
                       <g transform="translate(110 110)">
                         {[0.33, 0.66, 1].map((scale) => {
@@ -589,20 +689,36 @@ const DashboardPage = () => {
                             />
                           );
                         })}
-                        {radarSlices.map((_, idx) => {
+                        {radarSlices.map((slice, idx) => {
                           const angle = (Math.PI * 2 * idx) / radarSlices.length - Math.PI / 2;
                           const x = 80 * Math.cos(angle);
                           const y = 80 * Math.sin(angle);
+                          const pointColor = slicePalette[idx % slicePalette.length];
                           return (
-                            <line
-                              key={idx}
-                              x1="0"
-                              y1="0"
-                              x2={x}
-                              y2={y}
-                              stroke={isDark ? "#3F3F46" : "#e5e7eb"}
-                              strokeWidth="1"
-                            />
+                            <g key={slice.name}>
+                              <line
+                                x1="0"
+                                y1="0"
+                                x2={x}
+                                y2={y}
+                                stroke={isDark ? "#3F3F46" : "#e5e7eb"}
+                                strokeWidth="1"
+                              />
+                              <circle cx={x} cy={y} r="3" fill={pointColor}>
+                                <title>{slice.name}</title>
+                              </circle>
+                              <text
+                                x={x * 1.12}
+                                y={y * 1.12}
+                                fontSize="9"
+                                textAnchor={x > 0.1 ? "start" : x < -0.1 ? "end" : "middle"}
+                                dominantBaseline={y > 0.1 ? "hanging" : y < -0.1 ? "baseline" : "middle"}
+                                className="opacity-0 transition group-hover:opacity-100"
+                                fill={isDark ? "#E5E7EB" : "#4B5563"}
+                              >
+                                {slice.name}
+                              </text>
+                            </g>
                           );
                         })}
                         <polygon
@@ -619,6 +735,64 @@ const DashboardPage = () => {
                           stroke="#22C55E"
                           strokeWidth="2"
                         />
+                      </g>
+                    </svg>
+                  </div>
+                )}
+
+                {chartType === "line" && (
+                  <div className="group w-full flex justify-center">
+                    <svg width="260" height="200" viewBox="0 0 260 200">
+                      <g transform="translate(20 20)">
+                        <rect
+                          x="0"
+                          y="0"
+                          width="220"
+                          height="160"
+                          fill="none"
+                          stroke={isDark ? "#3F3F46" : "#e5e7eb"}
+                          strokeWidth="1"
+                        />
+                        {radarSlices.length > 1 && (
+                          <polyline
+                            fill="none"
+                            stroke={slicePalette[0]}
+                            strokeWidth="2"
+                            points={radarSlices
+                              .map((slice, idx) => {
+                                const x = (220 / (radarSlices.length - 1)) * idx;
+                                const y = 160 - (slice.value / maxRadarValue) * 140;
+                                return `${x},${y}`;
+                              })
+                              .join(" ")}
+                          />
+                        )}
+                        {radarSlices.map((slice, idx) => {
+                          const x = (220 / Math.max(1, radarSlices.length - 1)) * idx;
+                          const y = 160 - (slice.value / maxRadarValue) * 140;
+                          const pointColor = slicePalette[idx % slicePalette.length];
+                          return (
+                            <g key={slice.name}>
+                              <circle
+                                cx={x}
+                                cy={y}
+                                r="3"
+                                fill={pointColor}
+                              >
+                                <title>{slice.name}</title>
+                              </circle>
+                              <text
+                                x={x + 4}
+                                y={y - 6}
+                                fontSize="9"
+                                className="opacity-0 transition group-hover:opacity-100"
+                                fill={isDark ? "#E5E7EB" : "#4B5563"}
+                              >
+                                {slice.name}
+                              </text>
+                            </g>
+                          );
+                        })}
                       </g>
                     </svg>
                   </div>
@@ -674,11 +848,11 @@ const DashboardPage = () => {
                     color: "var(--text-primary)",
                   }}
                 >
-                  {chartTypes.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
+                {profitChartTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
                 </select>
               </div>
             </div>
@@ -694,14 +868,15 @@ const DashboardPage = () => {
                     {rangeProfitSlices.map((slice, idx) => {
                       const color = profitPalette[idx % profitPalette.length];
                       return (
-                        <div key={slice.name} className="space-y-1">
-                          <div className={`flex items-center justify-between text-xs ${isDark ? "text-[#A1A1AA]" : "text-gray-600"}`}>
+                        <div key={slice.name} className="group space-y-1">
+                          <div className={`flex items-center justify-between text-xs opacity-0 transition group-hover:opacity-100 ${isDark ? "text-[#A1A1AA]" : "text-gray-600"}`}>
                             <span className="truncate max-w-[220px]">{slice.name}</span>
                             <span>{slice.percent.toFixed(1)}%</span>
                           </div>
                           <div className={`h-2 w-full rounded-full ${isDark ? "bg-[#24262C]" : "bg-gray-100"}`}>
                             <div
                               className="h-2 rounded-full"
+                              title={slice.name}
                               style={{ width: `${slice.percent}%`, backgroundColor: color }}
                             />
                           </div>
@@ -711,8 +886,8 @@ const DashboardPage = () => {
                   </div>
                 )}
 
-                {(profitChartType === "pie" || profitChartType === "donut") && (
-                  <div className="relative w-40 h-40">
+                {profitChartType === "donut" && (
+                  <div className="group relative w-40 h-40">
                     <div
                       className="w-40 h-40 rounded-full shadow-inner"
                       style={{
@@ -722,63 +897,139 @@ const DashboardPage = () => {
                     {profitChartType === "donut" && (
                       <div className={`absolute inset-0 m-6 rounded-full shadow-inner ${isDark ? "bg-[#1E1F23]" : "bg-white"}`} />
                     )}
+                    <div className="absolute inset-0">
+                      {getPieLabels(rangeProfitSlices, 60).map((label) => (
+                        <span
+                          key={label.name}
+                          className={`absolute text-[10px] opacity-0 transition group-hover:opacity-100 ${isDark ? "text-[#E5E7EB]" : "text-gray-700"}`}
+                          style={{
+                            left: "50%",
+                            top: "50%",
+                            transform: `translate(${label.x}px, ${label.y}px) translate(-50%, -50%)`,
+                            maxWidth: "70px",
+                          }}
+                        >
+                          {label.name}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {profitChartType === "radar" && (
-                  <div className="w-full flex justify-center">
-                    <svg width="220" height="220" viewBox="0 0 220 220">
-                      <g transform="translate(110 110)">
-                        {[0.33, 0.66, 1].map((scale) => {
-                          const points = profitRadarSlices
-                            .map((_, idx) => {
-                              const angle = (Math.PI * 2 * idx) / profitRadarSlices.length - Math.PI / 2;
-                              const r = 80 * scale;
-                              const x = r * Math.cos(angle);
-                              const y = r * Math.sin(angle);
-                              return `${x},${y}`;
-                            })
-                            .join(" ");
-                          return (
-                            <polygon
-                              key={scale}
-                              points={points}
-                              fill="none"
-                              stroke={isDark ? "#3F3F46" : "#e5e7eb"}
-                              strokeWidth="1"
-                            />
-                          );
-                        })}
-                        {profitRadarSlices.map((_, idx) => {
-                          const angle = (Math.PI * 2 * idx) / profitRadarSlices.length - Math.PI / 2;
-                          const x = 80 * Math.cos(angle);
-                          const y = 80 * Math.sin(angle);
-                          return (
-                            <line
-                              key={idx}
-                              x1="0"
-                              y1="0"
-                              x2={x}
-                              y2={y}
-                              stroke={isDark ? "#3F3F46" : "#e5e7eb"}
-                              strokeWidth="1"
-                            />
-                          );
-                        })}
-                        <polygon
-                          points={profitRadarSlices
-                            .map((slice, idx) => {
-                              const angle = (Math.PI * 2 * idx) / profitRadarSlices.length - Math.PI / 2;
-                              const r = (slice.value / maxProfitRadarValue) * 80;
-                              const x = r * Math.cos(angle);
-                              const y = r * Math.sin(angle);
-                              return `${x},${y}`;
-                            })
-                            .join(" ")}
-                          fill="rgba(37, 99, 235, 0.25)"
-                          stroke="#2563EB"
-                          strokeWidth="2"
+                {profitChartType === "density" && (
+                  <div className="group w-full flex justify-center">
+                    <svg width="260" height="200" viewBox="0 0 260 200">
+                      <g transform="translate(20 20)">
+                        <rect
+                          x="0"
+                          y="0"
+                          width="220"
+                          height="160"
+                          fill="none"
+                          stroke={isDark ? "#3F3F46" : "#e5e7eb"}
+                          strokeWidth="1"
                         />
+                        {profitRadarSlices.length > 1 && (
+                          <path
+                            d={[
+                              "M",
+                              ...profitRadarSlices.map((slice, idx) => {
+                                const x = (220 / (profitRadarSlices.length - 1)) * idx;
+                                const y = 160 - (slice.value / maxProfitRadarValue) * 140;
+                                return `${x} ${y}`;
+                              }),
+                              "L",
+                              220,
+                              160,
+                              "L",
+                              0,
+                              160,
+                              "Z",
+                            ].join(" ")}
+                            fill={isDark ? "rgba(37, 99, 235, 0.25)" : "rgba(37, 99, 235, 0.2)"}
+                            stroke={profitPalette[0]}
+                            strokeWidth="2"
+                          />
+                        )}
+                        {profitRadarSlices.map((slice, idx) => {
+                          const x = (220 / Math.max(1, profitRadarSlices.length - 1)) * idx;
+                          const y = 160 - (slice.value / maxProfitRadarValue) * 140;
+                          const pointColor = profitPalette[idx % profitPalette.length];
+                          return (
+                            <g key={slice.name}>
+                              <circle cx={x} cy={y} r="3" fill={pointColor}>
+                                <title>{slice.name}</title>
+                              </circle>
+                              <text
+                                x={x + 4}
+                                y={y - 6}
+                                fontSize="9"
+                                className="opacity-0 transition group-hover:opacity-100"
+                                fill={isDark ? "#E5E7EB" : "#4B5563"}
+                              >
+                                {slice.name}
+                              </text>
+                            </g>
+                          );
+                        })}
+                      </g>
+                    </svg>
+                  </div>
+                )}
+
+                {profitChartType === "line" && (
+                  <div className="group w-full flex justify-center">
+                    <svg width="260" height="200" viewBox="0 0 260 200">
+                      <g transform="translate(20 20)">
+                        <rect
+                          x="0"
+                          y="0"
+                          width="220"
+                          height="160"
+                          fill="none"
+                          stroke={isDark ? "#3F3F46" : "#e5e7eb"}
+                          strokeWidth="1"
+                        />
+                        {profitRadarSlices.length > 1 && (
+                          <polyline
+                            fill="none"
+                            stroke={profitPalette[0]}
+                            strokeWidth="2"
+                            points={profitRadarSlices
+                              .map((slice, idx) => {
+                                const x = (220 / (profitRadarSlices.length - 1)) * idx;
+                                const y = 160 - (slice.value / maxProfitRadarValue) * 140;
+                                return `${x},${y}`;
+                              })
+                              .join(" ")}
+                          />
+                        )}
+                        {profitRadarSlices.map((slice, idx) => {
+                          const x = (220 / Math.max(1, profitRadarSlices.length - 1)) * idx;
+                          const y = 160 - (slice.value / maxProfitRadarValue) * 140;
+                          const pointColor = profitPalette[idx % profitPalette.length];
+                          return (
+                            <g key={slice.name}>
+                              <circle
+                                cx={x}
+                                cy={y}
+                                r="3"
+                                fill={pointColor}
+                              >
+                                <title>{slice.name}</title>
+                              </circle>
+                              <text
+                                x={x + 4}
+                                y={y - 6}
+                                fontSize="9"
+                                className="opacity-0 transition group-hover:opacity-100"
+                                fill={isDark ? "#E5E7EB" : "#4B5563"}
+                              >
+                                {slice.name}
+                              </text>
+                            </g>
+                          );
+                        })}
                       </g>
                     </svg>
                   </div>

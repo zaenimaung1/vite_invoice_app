@@ -1,0 +1,6 @@
+ mongodb://localhost:27017
+
+use vocherapp
+show collections
+db.products.find().pretty()   
+db.vouchers.find().pretty()   

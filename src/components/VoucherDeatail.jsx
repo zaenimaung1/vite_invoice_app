@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import * as XLSX from "xlsx";
 import useSWR, { useSWRConfig } from "swr";
 import toast, { Toaster } from "react-hot-toast";
 import { useSettings } from "../context/SettingsContext.jsx";
@@ -7,15 +8,22 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const VoucherDetail = () => {
   const { settings, formatCurrency, t } = useSettings();
-  const isDark = settings.theme === "dark";
   const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
   const vouchersUrl = `${apiBase}/vouchers`;
   const { data, error, isLoading } = useSWR(vouchersUrl, fetcher);
   const { mutate } = useSWRConfig();
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [search, setSearch] = useState("");
+  const getLocalDateString = React.useCallback((date) => {
+    const d = date ? new Date(date) : new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }, []);
+
   const [filterMonth, setFilterMonth] = useState(
-    () => new Date().toISOString().slice(0, 7)
+    () => getLocalDateString().slice(0, 7)
   );
   const [filterDate, setFilterDate] = useState("");
   const [page, setPage] = useState(1);
@@ -134,6 +142,57 @@ const VoucherDetail = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    const source = filteredVouchers;
+    if (!source.length) {
+      toast.error(t("noVouchersToExport"));
+      return;
+    }
+
+    const voucherRows = source.map((v) => ({
+      id: Number(v.id),
+      voucherId: v.voucherId ?? "",
+      username: v.username ?? "",
+      phoneNumber: v.phoneNumber ?? "",
+      date: v.date ? new Date(v.date).toISOString() : "",
+      subTotal: Number(v.subTotal) || 0,
+      tax: Number(v.tax) || 0,
+      taxRate: Number(v.taxRate) || 0,
+      grandTotal: Number(v.grandTotal) || 0,
+      items: JSON.stringify(v.items || []),
+    }));
+
+    const itemRows = source.flatMap((v) => {
+      const voucherId = v.voucherId ?? v.id ?? "";
+      return (v.items || []).map((it, idx) => {
+        const prod = it.product || {};
+        const qty = it.quantity ?? it.qty ?? 1;
+        const lineTotal = it.cost ?? (prod.price ? prod.price * qty : 0);
+        return {
+          voucherId,
+          itemNo: idx + 1,
+          productId: prod.id ?? it.productId ?? it.product_id ?? "",
+          productName: prod.name ?? "",
+          quantity: Number(qty) || 0,
+          unitPrice: Number(prod.price) || 0,
+          lineTotal: Number(lineTotal) || 0,
+        };
+      });
+    });
+
+    const wb = XLSX.utils.book_new();
+    const vouchersSheet = XLSX.utils.json_to_sheet(voucherRows);
+    XLSX.utils.book_append_sheet(wb, vouchersSheet, "Vouchers");
+
+    if (itemRows.length) {
+      const itemsSheet = XLSX.utils.json_to_sheet(itemRows);
+      XLSX.utils.book_append_sheet(wb, itemsSheet, "Items");
+    }
+
+    const fileName = `vouchers_${getLocalDateString()}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   const filteredVouchers = (data || []).filter((v) => {
     if (search.trim()) {
       const term = search.toLowerCase();
@@ -144,12 +203,12 @@ const VoucherDetail = () => {
     }
     if (filterMonth) {
       if (!v.date) return false;
-      const d = String(v.date).slice(0, 7);
+      const d = getLocalDateString(v.date).slice(0, 7);
       if (d !== filterMonth) return false;
     }
     if (filterDate) {
       if (!v.date) return false;
-      const d = String(v.date).slice(0, 10);
+      const d = getLocalDateString(v.date);
       if (d !== filterDate) return false;
     }
     return true;
@@ -166,30 +225,31 @@ const VoucherDetail = () => {
     if (!filterMonth) return 0;
     return (data || []).reduce((sum, v) => {
       if (!v?.date) return sum;
-      return String(v.date).slice(0, 7) === filterMonth
+      const d = getLocalDateString(v.date).slice(0, 7);
+      return d === filterMonth
         ? sum + (Number(v.grandTotal) || 0)
         : sum;
     }, 0);
-  }, [filterMonth, data]);
+  }, [filterMonth, data, getLocalDateString]);
 
   const todayTotal = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalDateString();
     return (data || []).reduce((sum, v) => {
       if (!v?.date) return sum;
-      return String(v.date).slice(0, 10) === today
+      return getLocalDateString(v.date) === today
         ? sum + (Number(v.grandTotal) || 0)
         : sum;
     }, 0);
-  }, [data]);
+  }, [data, getLocalDateString]);
 
   return (
-    <div className={`relative overflow-hidden shadow-md rounded-lg border ${isDark ? "bg-[#1E1F23] border-[#2E2E33]" : "bg-white border-gray-200"}`}>
+    <div className="relative overflow-hidden card">
       <Toaster />
 
       {/* Filter & Buttons */}
-      <div className={`p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b rounded-t-lg ${isDark ? "bg-[#24262C] border-[#2E2E33]" : "bg-gray-50 border-gray-200"}`}>
+      <div className="p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b" style={{ borderColor: "var(--card-border)", background: "var(--card-muted)" }}>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 max-w-xl w-full">
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchVouchers")} className={`w-full px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring ${isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5] placeholder:text-[#71717A]" : "bg-white border-gray-300 text-gray-800 placeholder:text-gray-400"}`} />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchVouchers")} className="w-full px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring" style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)" }} />
           <input
             type="month"
             value={filterMonth}
@@ -200,7 +260,8 @@ const VoucherDetail = () => {
                 setFilterDate("");
               }
             }}
-            className={`w-full sm:w-auto px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring ${isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5]" : "bg-white border-gray-300 text-gray-800"}`}
+            className="w-full sm:w-auto px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring"
+            style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)" }}
           />
           <input
             type="date"
@@ -226,23 +287,25 @@ const VoucherDetail = () => {
                 setFilterMonth(date.slice(0, 7));
               }
             }}
-            className={`w-full sm:w-auto px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring ${isDark ? "bg-[#1E1F23] border-[#3F3F46] text-[#F5F5F5]" : "bg-white border-gray-300 text-gray-800"}`}
+            className="w-full sm:w-auto px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring"
+            style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)" }}
           />
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
-          <div className={`px-3 py-2 text-xs font-semibold rounded-md border ${isDark ? "border-[#3F3F46] text-[#F5F5F5] bg-[#1E1F23]" : "border-gray-200 text-gray-700 bg-white"}`}>
+          <div className="chip">
             {t("monthlyRevenue")}: <span className="accent-text">{formatMMK(monthTotal)}</span>
           </div>
-          <div className={`px-3 py-2 text-xs font-semibold rounded-md border ${isDark ? "border-[#3F3F46] text-[#F5F5F5] bg-[#1E1F23]" : "border-gray-200 text-gray-700 bg-white"}`}>
+          <div className="chip">
             {t("todayRevenue")}: <span className="accent-text">{formatMMK(todayTotal)}</span>
           </div>
+          <button onClick={handleExportExcel} className="btn btn-primary text-xs">{t("export")}</button>
         </div>
       </div>
 
       {/* Voucher Table */}
       <div className="overflow-x-auto">
-        <table className={`w-full min-w-[760px] text-sm text-left table-auto ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>
-          <thead className={`${isDark ? "bg-[#24262C] border-[#2E2E33] text-[#A1A1AA]" : "bg-gray-100 border-gray-200"} border-b`}>
+        <table className="w-full min-w-[760px] text-sm text-left table-auto" style={{ color: "var(--text-primary)" }}>
+          <thead className="border-b" style={{ background: "var(--card-muted)", borderColor: "var(--card-border)", color: "var(--text-secondary)" }}>
             <tr>
               <th className="px-3 sm:px-6 py-3 font-semibold">{t("voucherIdLabel")}</th>
               <th className="px-3 sm:px-6 py-3 font-semibold">{t("customerNameLabel")}</th>
@@ -255,28 +318,28 @@ const VoucherDetail = () => {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan="6" className={`text-center py-4 ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("loading")}</td>
+                <td colSpan="6" className="text-center py-4" style={{ color: "var(--text-secondary)" }}>{t("loading")}</td>
               </tr>
             )}
 
             {paginatedVouchers.map((voucher, index) => (
-              <tr key={voucher.id} className={index % 2 === 0 ? isDark ? "bg-[#2A2D34]" : "bg-gray-50" : isDark ? "bg-[#1E1F23]" : "bg-white"}>
+              <tr key={voucher.id} className={index % 2 === 0 ? "bg-transparent" : "bg-transparent"}>
                 <td className="px-3 sm:px-6 py-4 font-medium whitespace-nowrap">{voucher.voucherId || voucher.id}</td>
                 <td className="px-3 sm:px-6 py-4">{voucher.username || "-"}</td>
                 <td className="px-3 sm:px-6 py-4">
                   {(() => {
                     const names = (voucher.items || []).map((item) => item?.product?.name).filter(Boolean);
                     if (names.length === 0) return "-";
-                    if (names.length <= 3) return names.join(", ");
-                    return `${names.slice(0, 3).join(", ")}, ...`;
+                    const text = names.length <= 3 ? names.join(", ") : `${names.slice(0, 3).join(", ")}, ...`;
+                    return <span className="line-clamp-2">{text}</span>;
                   })()}
                 </td>
                 <td className="px-3 sm:px-6 py-4 font-medium whitespace-nowrap">{formatMMK(voucher.grandTotal)}</td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">{new Date(voucher.date).toLocaleString()}</td>
                 <td className="px-3 sm:px-6 py-4 text-right">
                   <div className="inline-flex flex-wrap items-center gap-2 justify-end">
-                    <button onClick={() => setSelectedVoucher(voucher)} className={`px-3 py-1 text-xs rounded-full transition-transform active:scale-95 ${isDark ? "text-[#F5F5F5] bg-[#32353D] hover:bg-[#3F3F46]" : "text-[#1E1F23] bg-[#A3E635] hover:bg-[#B6F542]"}`}>{t("details")}</button>
-                    <button onClick={() => handleDelete(voucher.id)} disabled={deletingId === String(voucher.id)} aria-label="Delete voucher" className={`px-3 py-1 text-xs rounded-full disabled:opacity-50 transition-transform active:scale-95 ${isDark ? "text-red-200 bg-red-900/50 hover:bg-red-900" : "text-red-700 bg-red-50 hover:bg-red-100"}`}>{deletingId === String(voucher.id) ? t("deleting") : t("delete")}</button>
+                    <button onClick={() => setSelectedVoucher(voucher)} className="btn btn-soft text-xs">{t("details")}</button>
+                    <button onClick={() => handleDelete(voucher.id)} disabled={deletingId === String(voucher.id)} aria-label="Delete voucher" className="btn btn-danger text-xs disabled:opacity-50">{deletingId === String(voucher.id) ? t("deleting") : t("delete")}</button>
                   </div>
                 </td>
               </tr>
@@ -284,7 +347,7 @@ const VoucherDetail = () => {
 
             {filteredVouchers.length === 0 && !isLoading && (
               <tr>
-                <td colSpan="6" className={`text-center py-4 italic ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("noVouchersFound")}</td>
+                <td colSpan="6" className="text-center py-4 italic" style={{ color: "var(--text-secondary)" }}>{t("noVouchersFound")}</td>
               </tr>
             )}
           </tbody>
@@ -294,30 +357,30 @@ const VoucherDetail = () => {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-4 mb-4 flex-wrap">
-          <button onClick={() => handlePageChange(page - 1)} disabled={page === 1} className={`px-3 py-1 rounded-full disabled:opacity-50 transition ${isDark ? "bg-[#2A2D34] text-[#F5F5F5] hover:bg-[#32353D]" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{"<<"} {t("prev")}</button>
+          <button onClick={() => handlePageChange(page - 1)} disabled={page === 1} className="btn btn-ghost text-xs disabled:opacity-50">{"<<"} {t("prev")}</button>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button key={p} onClick={() => handlePageChange(p)} className={`px-3 py-1 rounded-full transition ${p === page ? "accent-bg" : isDark ? "bg-[#2A2D34] text-[#F5F5F5] hover:bg-[#32353D]" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>{p}</button>
+            <button key={p} onClick={() => handlePageChange(p)} className={`btn text-xs ${p === page ? "btn-primary" : "btn-ghost"}`}>{p}</button>
           ))}
-          <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} className={`px-3 py-1 rounded-full disabled:opacity-50 transition ${isDark ? "bg-[#2A2D34] text-[#F5F5F5] hover:bg-[#32353D]" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{t("next")} {">>"}</button>
+          <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} className="btn btn-ghost text-xs disabled:opacity-50">{t("next")} {">>"}</button>
         </div>
       )}
 
       {/* Voucher Details Modal */}
       {selectedVoucher && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setSelectedVoucher(null)}>
-          <div className={`rounded-lg shadow-lg w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 ${isDark ? "bg-[#1E1F23] text-[#F5F5F5]" : "bg-white text-gray-900"}`} onClick={(e) => e.stopPropagation()}>
+          <div className="card w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-4">
               <h3 className="text-lg font-semibold">{t("voucherDetails")}</h3>
               <div className="inline-flex flex-wrap items-center gap-3">
-                <button onClick={() => handlePrint(selectedVoucher)} className="px-3 py-1 text-sm bg-[#22C55E] text-white rounded hover:bg-[#4ADE80] transition-transform active:scale-95">{t("print")}</button>
-                <button onClick={() => setSelectedVoucher(null)} className={`text-sm px-3 py-1 rounded transition-transform active:scale-95 ${isDark ? "bg-[#32353D] text-[#F5F5F5]" : "bg-black text-white"}`}>{t("close")}</button>
+                <button onClick={() => handlePrint(selectedVoucher)} className="btn btn-primary text-sm">{t("print")}</button>
+                <button onClick={() => setSelectedVoucher(null)} className="btn btn-ghost text-sm">{t("close")}</button>
               </div>
             </div>
 
             {/* Product Table with Serial # */}
             <div className="overflow-x-auto">
-              <table className={`w-full text-sm text-left ${isDark ? "text-[#F5F5F5]" : "text-gray-700"}`}>
-                <thead className={isDark ? "bg-[#24262C]" : "bg-gray-100"}>
+              <table className="w-full text-sm text-left" style={{ color: "var(--text-primary)" }}>
+                <thead style={{ background: "var(--card-muted)" }}>
                   <tr>
                     <th className="px-3 py-2">#</th> {/* Serial number */}
                     <th className="px-3 py-2">{t("productLabel")}</th>
@@ -331,7 +394,7 @@ const VoucherDetail = () => {
                     const qty = it.quantity ?? it.qty ?? 1;
                     const lineTotal = it.cost ?? (prod.price ? prod.price * qty : 0);
                     return (
-                      <tr key={i} className={i % 2 === 0 ? isDark ? "bg-[#1E1F23]" : "bg-white" : isDark ? "bg-[#2A2D34]" : "bg-gray-50"}>
+                      <tr key={i} style={{ background: "transparent" }}>
                         <td className="px-3 py-2">{i + 1}</td>
                         <td className="px-3 py-2">{prod.name || "-"}</td>
                         <td className="px-3 py-2">{qty}</td>
@@ -345,11 +408,11 @@ const VoucherDetail = () => {
 
             {/* Totals */}
             <div className="flex items-center justify-end gap-6 mt-4 flex-wrap text-right">
-              <div className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("subtotal")}</div>
+              <div className="text-sm" style={{ color: "var(--text-secondary)" }}>{t("subtotal")}</div>
               <div className="font-semibold">{formatMMK(selectedVoucher.subTotal)}</div>
-              <div className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("taxLabel")}</div>
+              <div className="text-sm" style={{ color: "var(--text-secondary)" }}>{t("taxLabel")}</div>
               <div className="font-semibold">{formatMMK(selectedVoucher.tax)}</div>
-              <div className={`text-sm ${isDark ? "text-[#A1A1AA]" : "text-gray-500"}`}>{t("total")}</div>
+              <div className="text-sm" style={{ color: "var(--text-secondary)" }}>{t("total")}</div>
               <div className="font-semibold">{formatMMK(selectedVoucher.grandTotal)}</div>
             </div>
           </div>

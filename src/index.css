@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
 
 :root {
   --accent-color: #A3E635;
@@ -16,6 +17,21 @@
   --chart-line: #22C55E;
   --chart-fill: #4ADE80;
   --chart-muted: #86EFAC;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --card-muted: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+}
+
+[data-theme="dark"] {
+  --card-bg: #1e1f23;
+  --card-border: #2e2e33;
+  --card-muted: #24262c;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
 }
 
 .app-glow {
@@ -39,4 +55,69 @@
   outline: none;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 30%, transparent);
   border-color: var(--accent-color);
+}
+
+.brand-font {
+  font-family: "Pacifico", "Comic Sans MS", cursive;
+  letter-spacing: 0;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.card-muted {
+  background: var(--card-muted);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition: transform 0.08s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--accent-gradient, var(--accent-color));
+  color: #fff;
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--accent-color) 35%, transparent);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+}
+
+.btn-soft {
+  background: color-mix(in srgb, var(--accent-color) 18%, transparent);
+  color: var(--text-primary);
+}
+
+.btn-danger {
+  background: color-mix(in srgb, #ef4444 20%, transparent);
+  color: #ef4444;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
 }

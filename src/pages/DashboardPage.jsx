@@ -260,10 +260,10 @@ const DashboardPage = () => {
     <Container>
       <div className="w-full">
         {/* Header */}
-        <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+        <h1 className="text-3xl font-bold mb-2 " style={{ color: "var(--text-primary)" }}>
           {t("dashboard")}
         </h1>
-        <p className="mb-6" style={{ color: "var(--text-secondary)" }}>
+        <p className="mb-6" >
           {t("dashboardSubtitle")}
         </p>
 
@@ -275,7 +275,7 @@ const DashboardPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ModuleBtn
-              name={t("voucher")}
+              name={t("sale_record")}
               icon={
                 <div className={`p-4 rounded-full ${isDark ? "bg-[#24262C]" : "bg-blue-100"}`}>
                   <svg

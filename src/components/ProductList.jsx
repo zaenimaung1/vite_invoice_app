@@ -2,7 +2,7 @@ import React from "react";
 import useSWR from "swr";
 import ProductDataList from "./ProductDataList";
 import SkeletonData from "./SkeletonData";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext.jsx";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());

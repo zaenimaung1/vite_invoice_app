@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext.jsx";
 
 const BreadCrumb = ({ currentPageTitle, link }) => {
@@ -12,7 +12,7 @@ const BreadCrumb = ({ currentPageTitle, link }) => {
             <Link
               to="/"
               className={`inline-flex items-center text-sm font-medium ${
-                isDark ? "text-[#A1A1AA] hover:text-[#A3E635]" : "text-gray-600 hover:text-gray-900"
+                isDark ? "text-[#A3E635] font-bold" : "text-gray-600 hover:text-gray-900"
               }`}
             >
               <svg
@@ -42,11 +42,11 @@ const BreadCrumb = ({ currentPageTitle, link }) => {
                 <Link
                   to={item.path}
                   className={`inline-flex items-center text-sm font-medium ${
-                    isDark ? "text-[#A1A1AA] hover:text-[#A3E635]" : "text-gray-600 hover:text-gray-900"
+                    isDark ? "text-[#A3E635] font-bold": "text-gray-600 hover:text-gray-900"
                   }`}
                 >
                   <svg
-                className={`w-3.5 h-3.5 rtl:rotate-180 ${isDark ? "text-[#71717A]" : "text-gray-400"}`}
+                className={`w-3.5 h-3.5 rtl:rotate-180 ${isDark ? "text-black" : "text-gray-400"}`}
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 width={24}

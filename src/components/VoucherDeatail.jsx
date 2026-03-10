@@ -8,6 +8,7 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const VoucherDetail = () => {
   const { settings, formatCurrency, t } = useSettings();
+  const isDark = settings.theme === "dark";
   const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
   const vouchersUrl = `${apiBase}/vouchers`;
   const { data, error, isLoading } = useSWR(vouchersUrl, fetcher);
@@ -25,7 +26,7 @@ const VoucherDetail = () => {
   const [filterMonth, setFilterMonth] = useState(
     () => getLocalDateString().slice(0, 7)
   );
-  const [filterDate, setFilterDate] = useState("");
+  const [filterDate, setFilterDate] = useState(() => getLocalDateString());
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -232,15 +233,17 @@ const VoucherDetail = () => {
     }, 0);
   }, [filterMonth, data, getLocalDateString]);
 
-  const todayTotal = useMemo(() => {
-    const today = getLocalDateString();
+  const dayTotal = useMemo(() => {
+    const targetDay = filterDate || getLocalDateString();
     return (data || []).reduce((sum, v) => {
       if (!v?.date) return sum;
-      return getLocalDateString(v.date) === today
+      return getLocalDateString(v.date) === targetDay
         ? sum + (Number(v.grandTotal) || 0)
         : sum;
     }, 0);
-  }, [data, getLocalDateString]);
+  }, [data, filterDate, getLocalDateString]);
+
+  const dayRevenueLabel = filterDate ? t("selectedDayRevenue") : t("todayRevenue");
 
   return (
     <div className="relative overflow-hidden card">
@@ -280,11 +283,12 @@ const VoucherDetail = () => {
             }
             onChange={(e) => {
               const date = e.target.value;
-              setFilterDate(date);
-              if (date && !filterMonth) {
-                setFilterMonth(date.slice(0, 7));
-              } else if (date && filterMonth && !date.startsWith(filterMonth)) {
-                setFilterMonth(date.slice(0, 7));
+              const nextDate = date || getLocalDateString();
+              setFilterDate(nextDate);
+              if (!filterMonth) {
+                setFilterMonth(nextDate.slice(0, 7));
+              } else if (!nextDate.startsWith(filterMonth)) {
+                setFilterMonth(nextDate.slice(0, 7));
               }
             }}
             className="w-full sm:w-auto px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 accent-ring"
@@ -293,10 +297,10 @@ const VoucherDetail = () => {
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
           <div className="chip">
-            {t("monthlyRevenue")}: <span className="accent-text">{formatMMK(monthTotal)}</span>
+            {t("monthlyRevenue")}:<span className={`${isDark ? "text-[#ff1500]" : "accent-text"}`}>{formatMMK(monthTotal)}</span>
           </div>
           <div className="chip">
-            {t("todayRevenue")}: <span className="accent-text">{formatMMK(todayTotal)}</span>
+            {dayRevenueLabel}: <span className={`${isDark ? "text-[#ff1500]" : "accent-text"}`}>{formatMMK(dayTotal)}</span>
           </div>
           <button onClick={handleExportExcel} className="btn btn-primary text-xs">{t("export")}</button>
         </div>

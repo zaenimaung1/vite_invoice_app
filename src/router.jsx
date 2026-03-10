@@ -1,7 +1,7 @@
 import DashboardPage from "./pages/DashboardPage";
 import ProductPage from "./pages/ProductPage";
 import VoucherPage from "./pages/VoucherPage";
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout";
 import SalePage from "./pages/SalePage";
 import ErrorPage from "./pages/ErrorPage";

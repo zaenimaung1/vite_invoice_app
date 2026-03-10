@@ -13,7 +13,7 @@
   --dark-text-muted: #71717A;
   --dark-border-subtle: #3F3F46;
   --dark-border-card: #2E2E33;
-  --dark-glow: radial-gradient(circle, #6EE7B7 0%, #1E1F23 70%);
+  --app-bg: #ffffff;
   --chart-line: #22C55E;
   --chart-fill: #4ADE80;
   --chart-muted: #86EFAC;
@@ -26,6 +26,11 @@
 }
 
 [data-theme="dark"] {
+  --app-bg:  linear-gradient(
+  180deg,
+  #020617 0%,
+  #020617 50%,
+  #064e3b 100%);
   --card-bg: #1e1f23;
   --card-border: #2e2e33;
   --card-muted: #24262c;
@@ -34,8 +39,9 @@
   --text-muted: #71717a;
 }
 
+
 .app-glow {
-  background: var(--dark-glow);
+  background: var(--app-bg);
 }
 
 .accent-text {
@@ -81,6 +87,12 @@
   border-radius: 0.75rem;
   font-weight: 600;
   transition: transform 0.08s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.btn:disabled,
+.btn[disabled] {
+  cursor: not-allowed;
 }
 
 .btn:active {

@@ -14,6 +14,7 @@ const SaleList = () => {
   const { taxRate, settings, t } = useSettings();
   const isDark = settings.theme === "dark";
   const { mutate } = useSWRConfig();
+  const todayStr = new Date().toISOString().slice(0, 10);
   const {
     register,
     handleSubmit,
@@ -21,7 +22,9 @@ const SaleList = () => {
     reset,
     getValues,
     control,
-  } = useForm();
+  } = useForm({
+    defaultValues: { date: todayStr },
+  });
 
   const { data, isLoading } = useSWR(
     import.meta.env.VITE_API_URL + "/products",
@@ -322,11 +325,12 @@ const SaleList = () => {
               </label>
               <input
                 type="date"
-                defaultValue={new Date().toISOString().slice(0, 10)}
-                {...register("date", { required: true })}
+                value={todayStr}
+                disabled
                 className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 accent-ring"
                 style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)" }}
               />
+              <input type="hidden" {...register("date", { required: true })} value={todayStr} />
             </div>
 
             {/* Buttons */}
@@ -342,7 +346,7 @@ const SaleList = () => {
                 type="button"
                 onClick={confirmVoucher}
                 disabled={records.length === 0}
-                className={`btn w-full sm:w-auto ${
+                className={`btn w-full sm:w-auto cursor-not-allowed ${
                   records.length === 0 ? "btn-ghost opacity-60 cursor-not-allowed" : "btn-primary"
                 }`}
               >

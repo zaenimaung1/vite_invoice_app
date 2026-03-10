@@ -7,7 +7,7 @@ const ErrorPage = () => {
   const isDark = settings.theme === "dark";
   const navigate = useNavigate();
   return (
-    <div className={`relative min-h-screen overflow-hidden ${isDark ? "app-glow" : "bg-gradient-to-br from-slate-50 via-white to-emerald-50"}`}>
+    <div className="relative min-h-screen overflow-hidden app-glow">
       <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl opacity-60" style={{ background: "var(--accent-gradient)" }} />
       <div className={`absolute -bottom-32 -left-32 w-96 h-96 rounded-full blur-3xl ${isDark ? "bg-emerald-400/20" : "bg-emerald-300/40"}`} />
 

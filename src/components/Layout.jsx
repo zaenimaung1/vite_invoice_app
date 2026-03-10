@@ -1,5 +1,5 @@
 import React from 'react'
-import { Outlet } from 'react-router'
+import { Outlet } from 'react-router-dom'
 import Header from './Header'
 import { Toaster } from 'react-hot-toast'
 import { useSettings } from "../context/SettingsContext.jsx"
@@ -9,9 +9,7 @@ const Layout = () => {
   const isDark = settings.theme === "dark"
   return (
     <main
-      className={`min-h-screen flex flex-col ${
-        isDark ? "app-glow text-[#F5F5F5]" : "bg-gray-100 text-gray-900"
-      }`}
+      className={`min-h-screen flex flex-col app-glow ${isDark ? "text-[#F5F5F5]" : "text-gray-900"}`}
     >
       <Header />
       <section className="flex-1 py-8">
